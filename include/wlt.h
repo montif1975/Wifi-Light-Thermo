@@ -8,8 +8,8 @@
 #define WIFI_AP_SSID                        "PICOW-WIFI"
 #define WIFI_AP_PASS                        "PicoWifiPass"
 
-#define WIFI_SSID                           "FASTWEB-6QLPF6"  
-#define WIFI_PASS                           "CK2DEN6NE3"
+#define WIFI_SSID                           "SSID"  
+#define WIFI_PASS                           "12345678"
 
 #define GPIO_SELECT_WIFI_MODE               22
 
