@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sensor info</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .info-container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      font-size: 2rem; /* testo più grande */
+    }
+
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.5rem; /* titolo più piccolo del testo info */
+    }
+
+    .info-data {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .info-data label span.value {
+      font-family: 'Consolas', 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 2.2rem;
+      color: rgb(255, 0, 0);
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+    <div class="info-container">
+    <h2>WiFi Sensor (ver. 0.1)</h2>
+        <div class="info-data">
+        <label for="temp"><span>Temperature:</span> <span class="value">24.5 °C</span></label>
+        <label for="hum"><span>Humidity:</span> <span class="value">60 %</span></label>
+        </div>
+    </div>
+</body>
+</html>

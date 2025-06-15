@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Form</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="form-container">
+    <h2>AP Configuration</h2>
+    <form action="/submit" method="post">
+      <label for="netconfig">Wifi config</label>
+      <hr>
+      <label for="ssid">SSID</label>
+      <input type="text" id="ssid" name="ssid">
+      <label for="pwd">Password</label>
+      <input type="password" id="pwd" name="pwd">
+      <label for="sensconfig">Sensor config</label>
+      <hr>
+      <div class="sensor-config">
+      <label>Temperature displayed in:</label>
+      <label><input type="radio" name="scale" value="C">°C</label>
+      <label style="margin-left: 10px;"><input type="radio" name="scale" value="F">°F</label>
+      </div>
+      <hr>
+      <input type="submit" value="Save">
+    </form>
+  </div>
+</body>
+</html>
