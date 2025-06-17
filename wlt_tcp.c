@@ -148,7 +148,51 @@ static int test_server_content(const char *request, const char *params, char *re
 
             case HTTP_REQ_SETTINGS:
 #if DEBUG
-                // copy the settings form
+                // copy the settings form (fill in different step to check the buffer size)
+                // copy the head section
+                len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_HEAD);        
+                if (len2copy > 0 && len2copy < max_result_len) {
+                    len += len2copy;
+                } else {
+                    printf("Error generating settings head content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }   
+                // copy the wifi form
+                len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FORM_WIFI, pconfig->net_config.wifi_ssid);
+                if (len2copy > 0 && len2copy < max_result_len - len) {
+                    len += len2copy;
+                } else {
+                    printf("Error generating settings wifi form content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }
+                // copy the sensor form
+                len2copy = snprintf(result + len,
+                                    max_result_len - len,
+                                    SETTINGS_REPLY_FORM_SENSOR,
+                                    pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "checked" : "",
+                                    pconfig->data.settings.options.t_format == T_FORMAT_FAHRENHEIT ? "checked" : "",
+                                    pconfig->data.settings.options.out_format == OUT_FORMAT_TXT ? "checked" : "",
+                                    pconfig->data.settings.options.out_format == OUT_FORMAT_CSV ? "checked" : "");
+                if (len2copy > 0 && len2copy < max_result_len - len) {
+                    len += len2copy;
+                } else {
+                    printf("Error generating settings wifi form content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }
+                // copy the footer
+                len2copy = strlen(SETTINGS_REPLY_FOOTER);
+                if (len + len2copy >= max_result_len) {
+                    printf("Result buffer too small for settings footer (len=%d, len2copy=%d, max_result_len=%zu)\n", len, len2copy, max_result_len);
+                    return 0; // Error
+                }
+                else {
+                    len += snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FOOTER);
+                }
+                if (len < 0) {
+                    printf("Error generating settings content\n");
+                    return 0; // Error
+                }
+#if 0                
                 len2copy = strlen(SETTINGS_REPLY);
                 if (len2copy >= max_result_len) {
                     printf("Result buffer too small (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
@@ -161,6 +205,7 @@ static int test_server_content(const char *request, const char *params, char *re
                     printf("Error generating info content\n");
                     return 0; // Error
                 }
+#endif
 #else
                 // this page is available only when in AP mode
                 if (pconfig->net_config.wifi_mode != WLT_WIFI_MODE_AP) {

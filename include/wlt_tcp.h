@@ -18,8 +18,9 @@ background-color: #f4f6f8;\
 color: #333;\
 display: flex;\
 justify-content: center;\
-align-items: center;\
-height: 100vh;\
+align-items: flex-start;\
+min-height: 100vh;\
+padding-top: 50px;\
 margin: 0;\
 }\
 .form-container {\
@@ -75,8 +76,9 @@ background-color: #f4f6f8;\
 color: #333;\
 display: flex;\
 justify-content: center;\
-align-items: center;\
-height: 100vh;\
+align-items: flex-start;\
+min-height: 100vh;\
+padding-top: 50px;\
 margin: 0;\
 }\n\
 .info-container {\
@@ -130,6 +132,43 @@ font-weight: bold;\
 </body>\
 </html>"
 
+#define SETTINGS_REPLY_HEAD                 "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Config Form</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<div class=\"form-container\">\
+<h2>Wifi Sensor Configuration</h2>\
+<form action=\"/setparams\" method=\"post\">\
+<h3>Wifi config</h3>\
+<hr>"
+
+#define SETTINGS_REPLY_FORM_WIFI            "<label for=\"ssid\">SSID</label>\
+<input type=\"text\" id=\"ssid\" name=\"ssid\" value=\"%s\">\
+<label for=\"pwd\">Password</label>\
+<input type=\"password\" id=\"pwd\" name=\"pwd\" value=\"***\">\
+<h3>Sensor config</h3>\
+<hr>\
+<div class=\"sc\">"
+
+#define SETTINGS_REPLY_FORM_SENSOR          "<label>Temperature displayed in:</label>\
+<label><input type=\"radio\" name=\"scale\" value=\"C\" %s>°C</label>\
+<label><input type=\"radio\" name=\"scale\" value=\"F\" %s>°F</label>\
+<label>Output format:</label>\
+<label><input type=\"radio\" name=\"oform\" value=\"TXT\" %s>TXT</label>\
+<label><input type=\"radio\" name=\"oform\" value=\"CSV\" %s>CSV</label>"
+
+#define SETTINGS_REPLY_FOOTER               "</div>\
+<hr>\
+<input type=\"submit\" value=\"Save\">\
+</form>\
+</div>\
+</body>\
+</html>"
+
 #define SETTINGS_REPLY                      "<!DOCTYPE html>\
 <html lang=\"en\">\
 <head>\
@@ -163,6 +202,7 @@ font-weight: bold;\
 </div>\
 </body>\
 </html>"
+
 
 #define SETTINGS_REPLY_NACK                "<!DOCTYPE html>\
 <html lang=\"en\">\
