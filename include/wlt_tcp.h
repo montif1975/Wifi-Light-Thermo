@@ -8,9 +8,9 @@
 #define HTTP_POST                           "POST"
 #define HTTP_RESPONSE_HEADERS               "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: text/%s; charset=utf-8\nConnection: close\n\n"
 
-#define INFO_BODY                           "<html><body><h1>Hello from My Pico.</h1><p>Wifi SSID: %s</p><p>Wifi Password: %s</p><p>IP Address: %s</p><p>IP Mask: %s</p><p>IP Gateway: %s</p></body></html>"
-#define INFO_BODY_AP                        "<html><body><h1>Hello from My Pico.</h1><p>Wifi SSID: %s</p><p>Wifi Password: %s</p></body></html>"
-#define INFO_BODY_REQ                       "<body><h1>WiFi Sensors</h1><p>Temperature: %.02f</p><p>Humidity: %.02f</p></body>"
+//#define INFO_BODY                           "<html><body><h1>Hello from My Pico.</h1><p>Wifi SSID: %s</p><p>Wifi Password: %s</p><p>IP Address: %s</p><p>IP Mask: %s</p><p>IP Gateway: %s</p></body></html>"
+//#define INFO_BODY_AP                        "<html><body><h1>Hello from My Pico.</h1><p>Wifi SSID: %s</p><p>Wifi Password: %s</p></body></html>"
+//#define INFO_BODY_REQ                       "<body><h1>WiFi Sensors</h1><p>Temperature: %.02f</p><p>Humidity: %.02f</p></body>"
 
 #define STYLE_CSS                           "body {\
 font-family: Arial, sans-serif;\
@@ -68,7 +68,7 @@ transition: background-color 0.3s ease;\
 }\
 input[type=\"submit\"]:hover {\
 background-color: #2980b9;\
-}\n"
+}\r\n"
 
 #define STYLE_INFO_CSS                        "body {\
 font-family: Arial, sans-serif;\
@@ -111,7 +111,7 @@ font-family: 'Consolas', 'Courier New', monospace;\
 font-size: 2.2rem;\
 color: rgb(0, 0, 255);\
 font-weight: bold;\
-}\n"
+}\r\n"
 
 #define INFO_REPLY_HEAD                     "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -130,7 +130,7 @@ font-weight: bold;\
 </div>\
 </div>\
 </body>\
-</html>"
+</html>\r\n"
 
 #define SETTINGS_REPLY_HEAD                 "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -155,8 +155,8 @@ font-weight: bold;\
 <div class=\"sc\">"
 
 #define SETTINGS_REPLY_FORM_SENSOR          "<label>Temperature displayed in:</label>\
-<label><input type=\"radio\" name=\"scale\" value=\"C\" %s>°C</label>\
-<label><input type=\"radio\" name=\"scale\" value=\"F\" %s>°F</label>\
+<label><input type=\"radio\" name=\"scale\" value=\"C\" %s>&degC</label>\
+<label><input type=\"radio\" name=\"scale\" value=\"F\" %s>&degF</label>\
 <label>Output format:</label>\
 <label><input type=\"radio\" name=\"oform\" value=\"TXT\" %s>TXT</label>\
 <label><input type=\"radio\" name=\"oform\" value=\"CSV\" %s>CSV</label>"
@@ -167,8 +167,9 @@ font-weight: bold;\
 </form>\
 </div>\
 </body>\
-</html>"
+</html>\r\n"
 
+#if 0
 #define SETTINGS_REPLY                      "<!DOCTYPE html>\
 <html lang=\"en\">\
 <head>\
@@ -202,7 +203,7 @@ font-weight: bold;\
 </div>\
 </body>\
 </html>"
-
+#endif
 
 #define SETTINGS_REPLY_NACK                "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -217,7 +218,53 @@ font-weight: bold;\
 <h3>Please switch your device in AP mode and reboot it to configure.</h3>\
 </div>\
 </body>\
-</html>"
+</html>\r\n"
+
+#define SETTINGS_SAVE_ACK                   "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Configuration saved</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<div class=\"form-container\">\
+<h2>Settings saved!</h2>\
+<h3><a href=\"/info\">Click here to access sensor's data</a></h3>\
+</div>\
+</body>\
+</html>\r\n"
+
+#define SETTINGS_SAVE_NACK_EINVAL           "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Configuration saved</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<div class=\"form-container\">\
+<h2>Invalid Parameters!</h2>\
+<h3><a href=\"/settings\">Click here to configure</a></h3>\
+</div>\
+</body>\
+</html>\r\n"
+
+#define SETTINGS_SAVE_NACK_ENOPARAM         "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Configuration saved</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<div class=\"form-container\">\
+<h2>No Parameters found!</h2>\
+<h3><a href=\"/settings\">Click here to configure</a></h3>\
+</div>\
+</body>\
+</html>\r\n"
+
 
 #define API_INFO_REPLY                      "{\n\"T\":\"%.2f\",\n\"TF\":\"%s\",\n\"H\":\"%.2f\"\n}"
 
@@ -229,7 +276,8 @@ font-weight: bold;\
 #define INFO_URL                            "/info"
 #define STYLE_URL                           "/style.css"
 #define STYLE_INFO_URL                      "/style_info.css"
-#define SETTINGS_URL                        "/settings" 
+#define SETTINGS_URL                        "/settings"
+#define SETTINGS_FORM_URL                   "/setparams" 
 
 #define API_BASE_URL                        "/api"
 #define API_VERS                            "/v1"
@@ -241,6 +289,7 @@ enum http_req_page {
     HTTP_REQ_STYLE_INFO,
     HTTP_REQ_INFO,
     HTTP_REQ_SETTINGS,
+    HTTP_REQ_SETTINGS_FORM,
     HTTP_REQ_MAX
 };
 

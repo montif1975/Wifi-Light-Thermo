@@ -9,7 +9,8 @@ static char *http_req_page_str[HTTP_REQ_MAX] = {
     STYLE_URL,
     STYLE_INFO_URL,
     INFO_URL,
-    SETTINGS_URL
+    SETTINGS_URL,
+    SETTINGS_FORM_URL
 };
 
 static char *http_req_api_str[HTTP_API_MAX] = {
@@ -58,7 +59,63 @@ static err_t tcp_server_sent(void *arg, struct tcp_pcb *pcb, u16_t len) {
     return ERR_OK;
 }
 
-static int test_server_content(const char *request, const char *params, char *result, size_t max_result_len) {
+static int build_req_settings_form(char *result, size_t max_result_len) {
+    // Build the settings form
+    int len = 0;
+    int len2copy = 0;
+
+    if (pconfig == NULL) {
+        printf("pconfig is NULL\n");
+        return 0; // Error
+    }
+
+    len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_HEAD);        
+    if ((len2copy > 0) && (len2copy < max_result_len)) {
+        len += len2copy;
+    } else {
+        printf("Error generating settings head content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+        return 0; // Error
+    }   
+    // copy the wifi form
+    len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FORM_WIFI, pconfig->net_config.wifi_ssid);
+    if ((len2copy > 0) && (len2copy < (max_result_len - len))) {
+        len += len2copy;
+    } else {
+        printf("Error generating settings wifi form content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+        return 0; // Error
+    }
+    // copy the sensor form
+    len2copy = snprintf(result + len,
+                        max_result_len - len,
+                        SETTINGS_REPLY_FORM_SENSOR,
+                        pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "checked" : "",
+                        pconfig->data.settings.options.t_format == T_FORMAT_FAHRENHEIT ? "checked" : "",
+                        pconfig->data.settings.options.out_format == OUT_FORMAT_TXT ? "checked" : "",
+                        pconfig->data.settings.options.out_format == OUT_FORMAT_CSV ? "checked" : "");
+    if ((len2copy > 0) && (len2copy < (max_result_len - len))) {
+        len += len2copy;
+    } else {
+        printf("Error generating settings wifi form content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+        return 0; // Error
+    }
+    // copy the footer
+    len2copy = strlen(SETTINGS_REPLY_FOOTER);
+    if ((len + len2copy) >= max_result_len) {
+        printf("Result buffer too small for settings footer (len=%d, len2copy=%d, max_result_len=%zu)\n", len, len2copy, max_result_len);
+        return 0; // Error
+    }
+    else {
+        len += snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FOOTER);
+    }
+    if (len < 0) {
+        printf("Error generating settings content\n");
+        return 0; // Error
+    }
+
+    return len;
+}
+
+static int fill_server_content(const char *request, const char *params, char *result, size_t max_result_len) {
     int len = 0;
     int len2copy = 0;
     int i = 0;
@@ -149,63 +206,7 @@ static int test_server_content(const char *request, const char *params, char *re
             case HTTP_REQ_SETTINGS:
 #if DEBUG
                 // copy the settings form (fill in different step to check the buffer size)
-                // copy the head section
-                len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_HEAD);        
-                if (len2copy > 0 && len2copy < max_result_len) {
-                    len += len2copy;
-                } else {
-                    printf("Error generating settings head content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
-                    return 0; // Error
-                }   
-                // copy the wifi form
-                len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FORM_WIFI, pconfig->net_config.wifi_ssid);
-                if (len2copy > 0 && len2copy < max_result_len - len) {
-                    len += len2copy;
-                } else {
-                    printf("Error generating settings wifi form content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
-                    return 0; // Error
-                }
-                // copy the sensor form
-                len2copy = snprintf(result + len,
-                                    max_result_len - len,
-                                    SETTINGS_REPLY_FORM_SENSOR,
-                                    pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "checked" : "",
-                                    pconfig->data.settings.options.t_format == T_FORMAT_FAHRENHEIT ? "checked" : "",
-                                    pconfig->data.settings.options.out_format == OUT_FORMAT_TXT ? "checked" : "",
-                                    pconfig->data.settings.options.out_format == OUT_FORMAT_CSV ? "checked" : "");
-                if (len2copy > 0 && len2copy < max_result_len - len) {
-                    len += len2copy;
-                } else {
-                    printf("Error generating settings wifi form content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
-                    return 0; // Error
-                }
-                // copy the footer
-                len2copy = strlen(SETTINGS_REPLY_FOOTER);
-                if (len + len2copy >= max_result_len) {
-                    printf("Result buffer too small for settings footer (len=%d, len2copy=%d, max_result_len=%zu)\n", len, len2copy, max_result_len);
-                    return 0; // Error
-                }
-                else {
-                    len += snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FOOTER);
-                }
-                if (len < 0) {
-                    printf("Error generating settings content\n");
-                    return 0; // Error
-                }
-#if 0                
-                len2copy = strlen(SETTINGS_REPLY);
-                if (len2copy >= max_result_len) {
-                    printf("Result buffer too small (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
-                    return 0; // Error
-                }
-                else {
-                    len += snprintf(result + len, max_result_len - len, SETTINGS_REPLY, pconfig->net_config.wifi_ssid);
-                }
-                if (len < 0) {
-                    printf("Error generating info content\n");
-                    return 0; // Error
-                }
-#endif
+                len = build_req_settings_form(result, max_result_len);
 #else
                 // this page is available only when in AP mode
                 if (pconfig->net_config.wifi_mode != WLT_WIFI_MODE_AP) {
@@ -221,14 +222,7 @@ static int test_server_content(const char *request, const char *params, char *re
                 }
                 else {
                     printf("Settings page requested in AP mode\n");
-                    len2copy = strlen(SETTINGS_REPLY);
-                    if (len2copy >= max_result_len) {
-                        printf("Result buffer too small (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
-                        return 0; // Error
-                    }
-                    else {
-                        len += snprintf(result + len, max_result_len - len, SETTINGS_REPLY, pconfig->net_config.wifi_ssid);
-                    }
+                    len = build_req_settings_form(result, max_result_len);
                 }
                 if (len < 0) {
                     printf("Error generating info content\n");
@@ -236,6 +230,53 @@ static int test_server_content(const char *request, const char *params, char *re
                 }
 #endif
                 break;
+
+            case HTTP_REQ_SETTINGS_FORM:
+                // This is the form submission
+                if (params) {
+                    // Parse the parameters
+                    char *ssid = NULL;
+                    char *pwd = NULL;
+                    char *scale = NULL;
+                    char *oform = NULL;
+
+                    // Split params by '&'
+                    char *param = strtok((char *)params, "&");
+                    while (param) {
+                        if (strncmp(param, "ssid=", 5) == 0) {
+                            ssid = param + 5; // Skip "ssid="
+                        } else if (strncmp(param, "pwd=", 4) == 0) {
+                            pwd = param + 4; // Skip "pwd="
+                        } else if (strncmp(param, "scale=", 6) == 0) {
+                            scale = param + 6; // Skip "scale="
+                        } else if (strncmp(param, "oform=", 6) == 0) {
+                            oform = param + 6; // Skip "oform="
+                        }
+                        param = strtok(NULL, "&");
+                    }
+
+                    // Update the configuration
+                    if (ssid && pwd && scale && oform) {
+                        strncpy((char *)pconfig->net_config.wifi_ssid, ssid, sizeof(pconfig->net_config.wifi_ssid) - 1);
+                        strncpy((char *)pconfig->net_config.wifi_pass, pwd, sizeof(pconfig->net_config.wifi_pass) - 1);
+                        pconfig->data.settings.options.t_format = (strcmp(scale, "C") == 0) ? T_FORMAT_CELSIUS : T_FORMAT_FAHRENHEIT;
+                        pconfig->data.settings.options.out_format = (strcmp(oform, "TXT") == 0) ? OUT_FORMAT_TXT : OUT_FORMAT_CSV;
+
+                        // Save the configuration
+                        // TODO wlt_save_config();
+                        
+                        // Prepare success response
+                        len = snprintf(result, max_result_len, SETTINGS_SAVE_ACK);
+                    } else {
+                        len = snprintf(result, max_result_len, SETTINGS_SAVE_NACK_EINVAL);
+                    }
+                } else {
+                    len = snprintf(result, max_result_len, SETTINGS_SAVE_NACK_ENOPARAM);
+                }
+                if (len >= max_result_len) {
+                    printf("Result buffer too small for settings form response (len=%d, max_result_len=%zu)\n", len, max_result_len);
+                } 
+            break;
 
             default:
                 printf("Unknown request type %d\n", i);
@@ -332,7 +373,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
             }
 
             // Generate content
-            con_state->result_len = test_server_content(request, params, con_state->result, sizeof(con_state->result));
+            con_state->result_len = fill_server_content(request, params, con_state->result, sizeof(con_state->result));
 
             // Check we had enough buffer space
             if (con_state->result_len > sizeof(con_state->result) - 1) {
