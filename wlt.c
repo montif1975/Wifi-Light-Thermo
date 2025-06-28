@@ -26,10 +26,25 @@ void wlt_init_run_time_config(wlt_run_time_config_t *config) {
     memset(config->net_config.wifi_pass, 0, sizeof(config->net_config.wifi_pass));
     config->data.settings.options.t_format = T_FORMAT_CELSIUS; // Default temperature format is Celsius
     config->data.settings.options.out_format = OUT_FORMAT_CSV; // Default output format is CSV
-    config->data.settings.options.poll_time = 5; // Default poll time is 5 seconds
+    config->data.settings.options.poll_time = POLL_READ_TIME_DFLT; // Default poll time is 5 seconds
     config->data.temperature = 0.0f; // Initialize temperature
     config->data.humidity = 0.0f; // Initialize humidity
     config->data.pressure = 0.0f; // Initialize pressure
+
+    config->data.thresholds.high.temperature.value = 30.0f; // Default high temperature threshold
+    config->data.thresholds.high.temperature.trigger = TRD_TRIGGER_NONE; // Trigger when temperature is above the threshold
+    config->data.thresholds.low.temperature.value = 15.0f; // Default low temperature threshold
+    config->data.thresholds.low.temperature.trigger = TRD_TRIGGER_NONE; // Trigger when temperature is below the threshold
+
+    config->data.thresholds.high.humidity.value = 70.0f; // Default high humidity threshold
+    config->data.thresholds.high.humidity.trigger = TRD_TRIGGER_NONE; // Trigger when humidity is above the threshold
+    config->data.thresholds.low.humidity.value = 30.0f; // Default low humidity threshold
+    config->data.thresholds.low.humidity.trigger = TRD_TRIGGER_NONE; // Trigger when humidity is below the threshold
+
+    config->data.thresholds.high.pressure.value = 1020.0f; // Default high pressure threshold
+    config->data.thresholds.high.pressure.trigger = TRD_TRIGGER_NONE; // Trigger when pressure is above the threshold
+    config->data.thresholds.low.pressure.value = 980.0f; // Default low pressure threshold
+    config->data.thresholds.low.pressure.trigger = TRD_TRIGGER_NONE; // Trigger when pressure is below the threshold
 
     return;
 }
@@ -100,6 +115,7 @@ int main()
     dns_server_t dns_server;
     wls_server_t wls_server;
     char led_on = 1;
+    volatile int64_t tick, pre_tick;
 
     pconfig = &run_time_config;
     srand(to_us_since_boot(get_absolute_time()));
@@ -197,18 +213,27 @@ int main()
     }
     printf("Server opened successfully\n");
 
+    pre_tick = time_us_64();
+
     while (wls_server.state->complete == false) {
+
         cyw43_arch_poll();
         cyw43_arch_wait_for_work_until(make_timeout_time_ms(1000));
         led_on = !led_on; // Toggle the LED state
         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, led_on);
 
 //        printf("Waiting for work...\n");
-        // read the sensor data and update the DB
-        // TODO: Add a mechanism to read the sensor data
-        run_time_config.data.temperature = 25.0f + ((rand() % 5) - 2); // Example temperature
-        run_time_config.data.humidity = 50.0f + ((rand() % 5) - 2); // Example humidity
-//        printf("Temperature: %.2f, Humidity: %.2f\n", run_time_config.data.temperature, run_time_config.data.humidity); 
+        tick = time_us_64();
+        if ((tick - pre_tick) > run_time_config.data.settings.options.poll_time * 1000000) {
+            // If more than poll_time second has passed, we can read the sensor data
+            printf("Reading sensor data after %lu microseconds\n", (tick - pre_tick));
+            // read the sensor data and update the DB
+            // TODO: Add a mechanism to read the sensor data
+            run_time_config.data.temperature = 25.0f + ((rand() % 5) - 2); // Example temperature
+            run_time_config.data.humidity = 50.0f + ((rand() % 5) - 2); // Example humidity
+//        printf("Temperature: %.2f, Humidity: %.2f\n", run_time_config.data.temperature, run_time_config.data.humidity);
+            pre_tick = time_us_64(); // Update the pre_tick to current time 
+        }
     }
 
     if(run_time_config.net_config.wifi_mode == WLT_WIFI_MODE_AP) {
