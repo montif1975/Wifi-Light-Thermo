@@ -226,7 +226,7 @@ int main()
         tick = time_us_64();
         if ((tick - pre_tick) > run_time_config.data.settings.options.poll_time * 1000000) {
             // If more than poll_time second has passed, we can read the sensor data
-            printf("Reading sensor data after %lu microseconds\n", (tick - pre_tick));
+            printf("Reading sensor data after %llu microseconds\n", (tick - pre_tick));
             // read the sensor data and update the DB
             // TODO: Add a mechanism to read the sensor data
             run_time_config.data.temperature = 25.0f + ((rand() % 5) - 2); // Example temperature
