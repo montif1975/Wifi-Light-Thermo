@@ -18,7 +18,11 @@
       width: 90%;
       max-width: 600px; 
     }
-
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
     h2 {
       color: #2c3e50;
       margin-bottom: 20px;
@@ -28,12 +32,18 @@
     label {
       display: block;
       margin-bottom: 6px;
+      margin-top: 6px;
       font-weight: 500;
-      color: #34495e;
+      color: #343c5ea8;
+    }
+
+    select {
+      font-size: 14px;
     }
 
     input[type="text"],
-    input[type="password"] {
+    input[type="password"],
+    input [type="number"] {
       width: 100%;
       padding: 8px;
       margin-bottom: 16px;

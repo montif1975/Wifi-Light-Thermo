@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Form</title>
+  <link rel="stylesheet" href="C:/Users/monti/Lavoro/my_projects/wlt/web/style.css">
+</head>
+<body>
+  <div class="form-container">
+    <h2>Advanced configuration</h2>
+    <form action="/setadvanceparams" method="get">
+      <label for="sensconfig">Sensor config</label>
+      <hr>
+      <div class="input-group">
+        <label>Polling timer [s]</label>
+        <input type="number" id="ptime" name="ptime" min="1" max="63" step="1" value="30">
+      </div>
+      <div class="input-group">
+      <label for="thrconfig">Threshold config</label>
+      <hr>
+      <label>High Temperature:</label>
+      <input type="number" id="hTemp" name="hTemp" min="25" max="99" step="0.1" value="28.0">
+      <select id="hTtrig" name="hTtrig">
+        <option value="N">No trigger</option>
+        <option value="H">Up</option>
+        <option value="L">Down</option>
+        <option value="B">Both</option>
+      </select>
+      <label>Low Temperature:</label>
+      <input type="number" id="lTemp" name="lTemp" min="0" max="24.9" step="0.1" value="16.0">
+      <select id="lTtrig" name="lTtrig">
+        <option value="N">No trigger</option>
+        <option value="H">Up</option>
+        <option value="L">Down</option>
+        <option value="B">Both</option>
+      </select>
+      <label>High Humidity:</label>
+      <input type="number" id="hHum" name="hHum" min="30" max="99" step="0.1" value="60.0">
+      <select id="hHtrig" name="hHtrig">
+        <option value="N">No trigger</option>
+        <option value="H">Up</option>
+        <option value="L">Down</option>
+        <option value="B">Both</option>
+      </select>
+      <label>Low Humidity:</label>
+      <input type="number" id="lHum" name="lHum" min="0" max="29.9" step="0.1" value="25.0">
+      <select id="lHtrig" name="lHtrig">
+        <option value="N">No trigger</option>
+        <option value="H">Up</option>
+        <option value="L">Down</option>
+        <option value="B">Both</option>
+      </select>
+      </div>
+      <hr>
+      <input type="submit" value="Save">
+    </form>
+  </div>
+</body>
+</html>

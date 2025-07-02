@@ -125,7 +125,7 @@ font-weight: bold;\
 <div class=\"info-container\">\
 <h2>WiFi Sensor</h2>\
 <div class=\"info-data\">\
-<label><span class=\"value\">%.02f °C</span></label>\
+<label><span class=\"value\">%.02f %s</span></label>\
 <label><span class=\"value\">%.02f %%RH</span></label>\
 </div>\
 </div>\
@@ -142,7 +142,7 @@ font-weight: bold;\
 <body>\
 <div class=\"form-container\">\
 <h2>Wifi Sensor Configuration</h2>\
-<form action=\"/setparams\" method=\"post\">\
+<form action=\"/setparams\" method=\"get\">\
 <h3>Wifi config</h3>\
 <hr>"
 
@@ -165,45 +165,11 @@ font-weight: bold;\
 <hr>\
 <input type=\"submit\" value=\"Save\">\
 </form>\
+<h2>Advanced Settings</h2>\
+<label for=\"advanced\">Advanced settings are available in the <a href=\"/advanceparams\">Advanced Settings</a> page.</label>\
 </div>\
 </body>\
 </html>\r\n"
-
-#if 0
-#define SETTINGS_REPLY                      "<!DOCTYPE html>\
-<html lang=\"en\">\
-<head>\
-<meta charset=\"UTF-8\">\
-<title>Config Form</title>\
-<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
-</head>\
-<body>\
-<div class=\"form-container\">\
-<h2>Wifi Sensor Configuration</h2>\
-<form action=\"/setparams\" method=\"post\">\
-<h3>Wifi config</h3>\
-<hr>\
-<label for=\"ssid\">SSID</label>\
-<input type=\"text\" id=\"ssid\" name=\"ssid\" value=\"%s\">\
-<label for=\"pwd\">Password</label>\
-<input type=\"password\" id=\"pwd\" name=\"pwd\">\
-<h3>Sensor config</h3>\
-<hr>\
-<div class=\"sc\">\
-<label>Temperature displayed in:</label>\
-<label><input type=\"radio\" name=\"scale\" value=\"C\">°C</label>\
-<label><input type=\"radio\" name=\"scale\" value=\"F\">°F</label>\
-<label>Output format:</label>\
-<label><input type=\"radio\" name=\"oform\" value=\"TXT\">TXT</label>\
-<label><input type=\"radio\" name=\"oform\" value=\"CSV\">CSV</label>\
-</div>\
-<hr>\
-<input type=\"submit\" value=\"Save\">\
-</form>\
-</div>\
-</body>\
-</html>"
-#endif
 
 #define SETTINGS_REPLY_NACK                "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -277,12 +243,15 @@ font-weight: bold;\
 #define STYLE_URL                           "/style.css"
 #define STYLE_INFO_URL                      "/style_info.css"
 #define SETTINGS_URL                        "/settings"
-#define SETTINGS_FORM_URL                   "/setparams" 
+#define SETTINGS_FORM_URL                   "/setparams"
+#define ADVANCED_URL                        "/advanceparams"
+#define ADVANCED_FORM_URL                   "/setadvanceparams" 
 
 #define API_BASE_URL                        "/api"
 #define API_VERS                            "/v1"
 #define API_GET_INFO_URL                    API_BASE_URL API_VERS "/info"
 #define API_SET_PARAMS_URL                  API_BASE_URL API_VERS "/setparams"
+#define API_SET_ADVANCED_PARAMS_URL         API_BASE_URL API_VERS "/setadvanceparams"
 
 enum http_req_page {
     HTTP_REQ_STYLE,
@@ -290,12 +259,15 @@ enum http_req_page {
     HTTP_REQ_INFO,
     HTTP_REQ_SETTINGS,
     HTTP_REQ_SETTINGS_FORM,
+    HTTP_REQ_ADVANCED,
+    HTTP_REQ_ADVANCED_FORM,
     HTTP_REQ_MAX
 };
 
 enum http_req_api {
     HTTP_API_INFO,
     HTTP_API_SET_PARAMS,
+    HTTP_API_SET_ADVANCED_PARAMS,
     HTTP_API_MAX   
 };
 

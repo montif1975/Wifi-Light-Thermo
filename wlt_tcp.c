@@ -199,6 +199,7 @@ static int fill_server_content(const char *request, const char *params, char *re
                 else {
                     len += snprintf(result + len, max_result_len - len, INFO_REPLY_BODY,
                         pconfig->data.temperature,
+                        (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "&degC" : "&degF"),
                         pconfig->data.humidity);
                 }      
                 break;
