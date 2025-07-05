@@ -119,6 +119,11 @@ font-weight: bold;\
 <meta charset=\"UTF-8\">\
 <title>Sensor info</title>\
 <link rel=\"stylesheet\" type=\"text/css\" href=\"style_info.css\">\
+<script>\
+setInterval(() => {\
+location.reload();\
+}, 10000);\
+</script>\
 </head>"
 
 #define INFO_REPLY_BODY                     "<body>\
@@ -132,6 +137,7 @@ font-weight: bold;\
 </body>\
 </html>\r\n"
 
+// Settings page reply
 #define SETTINGS_REPLY_HEAD                 "<!DOCTYPE html>\
 <html lang=\"en\">\
 <head>\
@@ -154,10 +160,10 @@ font-weight: bold;\
 <hr>\
 <div class=\"sc\">"
 
-#define SETTINGS_REPLY_FORM_SENSOR          "<label>Temperature displayed in:</label>\
+#define SETTINGS_REPLY_FORM_SENSOR          "<p>Temperature displayed in:</p>\
 <label><input type=\"radio\" name=\"scale\" value=\"C\" %s>&degC</label>\
 <label><input type=\"radio\" name=\"scale\" value=\"F\" %s>&degF</label>\
-<label>Output format:</label>\
+<p>Output format:</p>\
 <label><input type=\"radio\" name=\"oform\" value=\"TXT\" %s>TXT</label>\
 <label><input type=\"radio\" name=\"oform\" value=\"CSV\" %s>CSV</label>"
 
@@ -166,7 +172,7 @@ font-weight: bold;\
 <input type=\"submit\" value=\"Save\">\
 </form>\
 <h2>Advanced Settings</h2>\
-<label for=\"advanced\">Advanced settings are available in the <a href=\"/advanceparams\">Advanced Settings</a> page.</label>\
+<p>Advanced settings are available <a href=\"/advparams\">here</a></p>\
 </div>\
 </body>\
 </html>\r\n"
@@ -205,7 +211,7 @@ font-weight: bold;\
 <html lang=\"en\">\
 <head>\
 <meta charset=\"UTF-8\">\
-<title>Configuration saved</title>\
+<title>Configuration error</title>\
 <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
 </head>\
 <body>\
@@ -220,7 +226,7 @@ font-weight: bold;\
 <html lang=\"en\">\
 <head>\
 <meta charset=\"UTF-8\">\
-<title>Configuration saved</title>\
+<title>Configuration error</title>\
 <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
 </head>\
 <body>\
@@ -231,6 +237,104 @@ font-weight: bold;\
 </body>\
 </html>\r\n"
 
+// settings advanced reply
+#define ADVANCED_REPLY_HEAD         "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Advance Config Form</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<div class=\"form-container\">\
+<h2>Advanced configuration</h2>\
+<form action=\"/setadvparams\" method=\"get\">\
+<h3>Sensor config</h3>\
+<hr>"
+
+#define ADVANCED_REPLY_FORM_SENSOR  "<div class=\"input-group\">\
+<p>Polling timer [s]</p>\
+<input type=\"number\" id=\"ptime\" name=\"ptime\" min=\"%d\" max=\"%d\" step=\"1\" value=\"%d\">\
+</div>"
+
+// I need to change the form to use links for setting thresholds
+// due the limitation in the lenght of the TCP message in the web server implementation using lwIP
+#define ADVANCED_REPLY_FORM_THRESHOLDS  "<div class=\"input-group\">\
+<h3>Threshold config</h3>\
+<hr>\
+<p>Set high temperature threshold <a href=\"/sethightemp\">here</a></p>\
+<p>Set low temperature threshold <a href=\"/setlowtemp\">here</a></p>\
+<hr>\
+<p>Set high humidity threshold <a href=\"/sethighhum\">here</a></p>\
+<p>Set low humidity threshold <a href=\"/setlowhum\">here</a></p>\
+<hr>\
+</div>"
+
+#define ADVANCED_REPLY_FOOTER               "<input type=\"submit\" value=\"Save\">\
+</form>\
+<div>\
+<p>Return to <a href=\"/settings\">Settings</a></p>\
+</div>\
+</div>\
+</body>\
+</html>\r\n"
+
+#define ADVANCED_SAVE_ACK                   "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Advanced configuration saved</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<div class=\"form-container\">\
+<h2>Advance settings saved!</h2>\
+<h3><a href=\"/info\">Click here to access sensor's data</a></h3>\
+</div>\
+</body>\
+</html>\r\n"
+
+#define ADVANCED_SAVE_NACK_EINVAL           "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Advanced configuration error</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<div class=\"form-container\">\
+<h2>Invalid Parameters!</h2>\
+<h3><a href=\"/advparams\">Click here to configure</a></h3>\
+</div>\
+</body>\
+</html>\r\n"
+
+#define ADVANCED_SAVE_NACK_ENOPARAM         "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Advanced configuration error</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<div class=\"form-container\">\
+<h2>No Parameters found!</h2>\
+<h3><a href=\"/advparams\">Click here to configure</a></h3>\
+</div>\
+</body>\
+</html>\r\n"
+
+#define REPLY_NOT_YET_IMPLEMENTED           "<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+<meta charset=\"UTF-8\">\
+<title>Advice</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+</head>\
+<body>\
+<h2>Sorry, this page is not implemented yet!</h2>\
+</body>\
+</html>\r\n"
 
 #define API_INFO_REPLY                      "{\n\"T\":\"%.2f\",\n\"TF\":\"%s\",\n\"H\":\"%.2f\"\n}"
 
@@ -244,14 +348,28 @@ font-weight: bold;\
 #define STYLE_INFO_URL                      "/style_info.css"
 #define SETTINGS_URL                        "/settings"
 #define SETTINGS_FORM_URL                   "/setparams"
-#define ADVANCED_URL                        "/advanceparams"
-#define ADVANCED_FORM_URL                   "/setadvanceparams" 
+#define ADVANCED_URL                        "/advparams"
+#define ADVANCED_FORM_URL                   "/setadvparams"
+#define SET_HIGH_TEMP_URL                   "/sethightemp"
+#define SET_HIGH_TEMP_FORM_URL              "/sethightempform"
+#define SET_LOW_TEMP_URL                    "/setlowtemp"
+#define SET_LOW_TEMP_FORM_URL               "/setlowtempform"
+#define SET_HIGH_HUM_URL                    "/sethighhum"
+#define SET_HIGH_HUM_FORM_URL               "/sethighhumform"
+#define SET_LOW_HUM_URL                     "/setlowhum"
+#define SET_LOW_HUM_FORM_URL                "/setlowhumform"
+
 
 #define API_BASE_URL                        "/api"
 #define API_VERS                            "/v1"
 #define API_GET_INFO_URL                    API_BASE_URL API_VERS "/info"
 #define API_SET_PARAMS_URL                  API_BASE_URL API_VERS "/setparams"
-#define API_SET_ADVANCED_PARAMS_URL         API_BASE_URL API_VERS "/setadvanceparams"
+#define API_SET_ADVANCED_PARAMS_URL         API_BASE_URL API_VERS "/setadvparams"
+#define API_SET_HIGH_TEMP_URL               API_BASE_URL API_VERS "/sethightemp"
+#define API_SET_LOW_TEMP_URL                API_BASE_URL API_VERS "/setlowtemp"
+#define API_SET_HIGH_HUM_URL                API_BASE_URL API_VERS "/sethighhum"
+#define API_SET_LOW_HUM_URL                 API_BASE_URL API_VERS "/setlowhum"
+
 
 enum http_req_page {
     HTTP_REQ_STYLE,
@@ -261,6 +379,14 @@ enum http_req_page {
     HTTP_REQ_SETTINGS_FORM,
     HTTP_REQ_ADVANCED,
     HTTP_REQ_ADVANCED_FORM,
+    HTTP_REQ_SET_HIGH_TEMP,
+    HTTP_REQ_SET_HIGH_TEMP_FORM,
+    HTTP_REQ_SET_LOW_TEMP,
+    HTTP_REQ_SET_LOW_TEMP_FORM,
+    HTTP_REQ_SET_HIGH_HUM,
+    HTTP_REQ_SET_HIGH_HUM_FORM,
+    HTTP_REQ_SET_LOW_HUM,
+    HTTP_REQ_SET_LOW_HUM_FORM,
     HTTP_REQ_MAX
 };
 
@@ -268,6 +394,10 @@ enum http_req_api {
     HTTP_API_INFO,
     HTTP_API_SET_PARAMS,
     HTTP_API_SET_ADVANCED_PARAMS,
+    HTTP_API_SET_HIGH_TEMP,
+    HTTP_API_SET_LOW_TEMP,
+    HTTP_API_SET_HIGH_HUM,
+    HTTP_API_SET_LOW_HUM,
     HTTP_API_MAX   
 };
 

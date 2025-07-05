@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Form</title>
+  <link rel="stylesheet" href="C:\Users\monti\Documents\Alfredo\Lavoro\envPico\my_projects\wlt\web\style.css">
+</head>
+<body>
+  <div class="form-container">
+    <h2>Advanced configuration</h2>
+    <form action="/setadvparams" method="get">
+      <label>Sensor config</label>
+      <hr>
+      <div class="input-group">
+        <label>Polling timer [s]</label>
+        <input type="number" id="ptime" name="ptime" min="1" max="63" step="1" value="30">
+      </div>
+      <div class="input-group">
+      <label>Threshold config</label>
+      <hr>
+      <label>Set high temperature threshold <a href="/sethightemp">here</a></label>
+      <label>Set low temperature threshold <a href="/setlowtemp">here</a></label>
+      <hr>
+      <label>Set high humidity threshold <a href="/sethighhum">here</a></label>
+      <label>Set low humidity threshold <a href="/setlowhum">here</a></label>
+      <hr>
+      </div>
+      <input type="submit" value="Save">
+    </form>
+  <div>
+    <p>Return to <a href="/settings">Settings</a></p>
+  </div>
+  </div>
+</body>
+</html>

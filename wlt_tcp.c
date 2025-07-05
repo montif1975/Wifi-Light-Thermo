@@ -10,14 +10,27 @@ static char *http_req_page_str[HTTP_REQ_MAX] = {
     STYLE_INFO_URL,
     INFO_URL,
     SETTINGS_URL,
-    SETTINGS_FORM_URL
+    SETTINGS_FORM_URL,
+    ADVANCED_URL,
+    ADVANCED_FORM_URL,
+    SET_HIGH_TEMP_URL,   
+    SET_HIGH_TEMP_FORM_URL,
+    SET_LOW_TEMP_URL,
+    SET_LOW_TEMP_FORM_URL, 
+    SET_HIGH_HUM_URL,      
+    SET_HIGH_HUM_FORM_URL, 
+    SET_LOW_HUM_URL,       
+    SET_LOW_HUM_FORM_URL  
 };
 
 static char *http_req_api_str[HTTP_API_MAX] = {
     API_GET_INFO_URL,
-    API_SET_PARAMS_URL
+    API_SET_PARAMS_URL,
+    API_SET_HIGH_TEMP_URL,
+    API_SET_LOW_TEMP_URL, 
+    API_SET_HIGH_HUM_URL, 
+    API_SET_LOW_HUM_URL
 };
-
 
 static err_t tcp_close_client_connection(TCP_CONNECT_STATE_T *con_state, struct tcp_pcb *client_pcb, err_t close_err) {
     if (client_pcb) {
@@ -106,6 +119,63 @@ static int build_req_settings_form(char *result, size_t max_result_len) {
     }
     else {
         len += snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FOOTER);
+    }
+    if (len < 0) {
+        printf("Error generating settings content\n");
+        return 0; // Error
+    }
+
+    return len;
+}
+
+static int build_req_adv_settings_form(char *result, size_t max_result_len) {
+    // Build the advanced settings form
+    int len = 0;
+    int len2copy = 0;
+
+    if (pconfig == NULL) {
+        printf("pconfig is NULL\n");
+        return 0; // Error
+    }
+
+    len2copy = snprintf(result + len, max_result_len - len, ADVANCED_REPLY_HEAD);
+    if ((len2copy > 0) && (len2copy < max_result_len)) {
+        len += len2copy;
+    } else {
+        printf("Error generating advparams head content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+        return 0; // Error
+    }
+
+    // copy the sensor config form
+    len2copy = snprintf(result + len, max_result_len - len,
+                        ADVANCED_REPLY_FORM_SENSOR,
+                        POLL_READ_TIME_MIN,
+                        POLL_READ_TIME_MAX,
+                        pconfig->data.settings.options.poll_time);
+    if ((len2copy > 0) && (len2copy < max_result_len)) {
+        len += len2copy;
+    } else {
+        printf("Error generating advparams content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+        return 0; // Error
+    }
+
+    // copy the thresholds form
+    len2copy = snprintf(result + len, max_result_len - len, ADVANCED_REPLY_FORM_THRESHOLDS);
+    if ((len2copy > 0) && (len2copy < max_result_len)) {
+        len += len2copy;
+    } else {
+        printf("Error generating advparams head content (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+        return 0; // Error
+    }
+
+    // copy the footer
+    len2copy = strlen(ADVANCED_REPLY_FOOTER);
+    if ((len + len2copy) >= max_result_len) {
+        printf("Result buffer too small for settings footer (len=%d, len2copy=%d, max_result_len=%zu)\n", len, len2copy, max_result_len);
+        return 0; // Error
+    }
+    else {
+        len += snprintf(result + len, max_result_len - len, ADVANCED_REPLY_FOOTER);
     }
     if (len < 0) {
         printf("Error generating settings content\n");
@@ -279,6 +349,74 @@ static int fill_server_content(const char *request, const char *params, char *re
                 } 
             break;
 
+            case HTTP_REQ_ADVANCED:
+                // copy the advanced settings form (fill in different step to check the buffer size)
+                len = build_req_adv_settings_form(result, max_result_len);
+                break;
+            
+            case HTTP_REQ_ADVANCED_FORM:
+                // This is the advanced form submission
+                if(params) {
+                    // Parse the parameters
+                    char *ptime = NULL;
+
+                    // Split params by '&'
+                    char *param = strtok((char *)params, "&");
+                    while (param) {
+                        if (strncmp(param, "ptime=", 6) == 0) {
+                            ptime = param + 6; // Skip "poll_time="
+                        } 
+                        param = strtok(NULL, "&");
+                    }
+
+                    // Update the configuration
+                    if (ptime) {
+                        int poll_time_val = atoi(ptime);
+ 
+                        // Validate and update settings
+                        if ((poll_time_val >= POLL_READ_TIME_MIN) && (poll_time_val <= POLL_READ_TIME_MAX)) {
+                            pconfig->data.settings.options.poll_time = poll_time_val;
+                        }
+
+                        // Save the configuration
+                        // TODO wlt_save_config();
+
+                        // Prepare success response
+                        len = snprintf(result, max_result_len, ADVANCED_SAVE_ACK);
+                    }
+                    else {
+                        len = snprintf(result, max_result_len, ADVANCED_SAVE_NACK_EINVAL);
+                    }
+                } else {
+                    len = snprintf(result, max_result_len, ADVANCED_SAVE_NACK_ENOPARAM);
+                }
+                if (len >= max_result_len) {
+                    printf("Result buffer too small for advanced form response (len=%d, max_result_len=%zu)\n", len, max_result_len);
+                }   
+                break;
+
+            case HTTP_REQ_SET_HIGH_TEMP:
+            case HTTP_REQ_SET_HIGH_TEMP_FORM:
+            case HTTP_REQ_SET_LOW_TEMP:
+            case HTTP_REQ_SET_LOW_TEMP_FORM:
+            case HTTP_REQ_SET_HIGH_HUM:
+            case HTTP_REQ_SET_HIGH_HUM_FORM:
+            case HTTP_REQ_SET_LOW_HUM:
+            case HTTP_REQ_SET_LOW_HUM_FORM:
+                len2copy = strlen(REPLY_NOT_YET_IMPLEMENTED);
+                if (len2copy >= max_result_len) {
+                    printf("Result buffer too small for info head (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }
+                else {
+                    len += snprintf(result + len, max_result_len - len, REPLY_NOT_YET_IMPLEMENTED);
+                }
+                if (len < 0) {
+                    printf("Error generating info content\n");
+                    return 0; // Error
+                }
+                break;
+
             default:
                 printf("Unknown request type %d\n", i);
                 // return empty result
@@ -311,9 +449,13 @@ static int fill_server_content(const char *request, const char *params, char *re
                     len = len2copy;
                     break;
 
+                case HTTP_API_SET_HIGH_TEMP:
+                case HTTP_API_SET_LOW_TEMP:
+                case HTTP_API_SET_HIGH_HUM:
+                case HTTP_API_SET_LOW_HUM:
                 case HTTP_API_SET_PARAMS:
                     // Handle setting parameters (not implemented)
-                    len = snprintf(result, max_result_len, "{\"status\":\"not_implemented\"}");
+                    len = snprintf(result, max_result_len, "{\"status\":\"not_implemented_yet\"}");
                     if (len >= max_result_len) {
                         printf("Result buffer too small for API set params (len=%d, max_result_len=%zu)\n", len, max_result_len);
                         return 0; // Error

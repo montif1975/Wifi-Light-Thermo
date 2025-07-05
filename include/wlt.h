@@ -37,6 +37,7 @@ typedef struct wlt_net_config {
 #define T_FORMAT_FAHRENHEIT     1
 #define OUT_FORMAT_CSV          0
 #define OUT_FORMAT_TXT          1
+#define POLL_READ_TIME_MIN      1   // Minimum poll read sensor time in seconds (1 second)
 #define POLL_READ_TIME_MAX      63  // Maximum poll read sensor time in seconds (6 bits)
 #define POLL_READ_TIME_DFLT     30  // Default poll read sensor time in seconds
 
