@@ -2,15 +2,39 @@
 #include <string.h>
 #include <stdlib.h>
 #include "hardware/gpio.h"
+//#include <ctype.h>
+#include "hardware/i2c.h"
+//#include "hardware/pio.h"
+#include "hardware/uart.h"
+#include "hardware/irq.h"
+#include "hardware/watchdog.h"
+//#include "pico/binary_info.h"
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
 #include "dhcpserver.h"
 #include "dnsserver.h"
 #include "include/wlt.h"
-//#include "include/wlt_tcp.h"
+#include "include/dht20.h"
 
 // global variables
 wlt_run_time_config_t *pconfig;
+
+/*
+ * Function: wlt_init_port_sensor()
+*/
+void wlt_init_port_sensor(void) {
+    // I2C for Sensor (Temp, humidity,etc...)
+    // I2C Initialisation. Using it at 400Khz.
+    i2c_init(I2C_PORT_SENS, 400*1000);
+    
+    gpio_set_function(I2C_SDA_SENS, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL_SENS, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SDA_SENS);
+    gpio_pull_up(I2C_SCL_SENS);
+    // For more examples of I2C use see https://github.com/raspberrypi/pico-examples/tree/master/i2c
+    
+    return;
+}
 
 /*
 * Function: wlt_init_run_time_config()
@@ -27,6 +51,8 @@ void wlt_init_run_time_config(wlt_run_time_config_t *config) {
     config->data.settings.options.t_format = T_FORMAT_CELSIUS; // Default temperature format is Celsius
     config->data.settings.options.out_format = OUT_FORMAT_CSV; // Default output format is CSV
     config->data.settings.options.poll_time = POLL_READ_TIME_DFLT; // Default poll time is 5 seconds
+    config->data.settings.options.sens_avail = SENS_NOT_AVAILABLE; // Sensor not available by default
+    config->data.settings.options.data_valid = SENS_DATA_NOT_VALID; // Data not valid by default
     config->data.temperature = 0.0f; // Initialize temperature
     config->data.humidity = 0.0f; // Initialize humidity
     config->data.pressure = 0.0f; // Initialize pressure
@@ -124,6 +150,15 @@ int main()
     sleep_ms(2000);
 
     wlt_init_run_time_config(&run_time_config);
+
+    wlt_init_port_sensor();
+    if (DHT20_init() != 0) {
+        printf("Failed to initialize DHT20 sensor\n");
+        run_time_config.data.settings.options.sens_avail = SENS_NOT_AVAILABLE;
+    } else {
+        printf("DHT20 sensor initialized successfully\n");
+        run_time_config.data.settings.options.sens_avail = SENS_AVAILABLE;
+    }
 
     // configure the GPIO to select the wifi mode.
     wlt_configure_gpio_select_wifi_mode();
@@ -228,10 +263,25 @@ int main()
             // If more than poll_time second has passed, we can read the sensor data
             printf("Reading sensor data after %llu microseconds\n", (tick - pre_tick));
             // read the sensor data and update the DB
+#if 1
+            if (run_time_config.data.settings.options.sens_avail == SENS_AVAILABLE) {
+                if (DHT20_read_data(&run_time_config.data.temperature, &run_time_config.data.humidity) != 0) {
+                    printf("Failed to read DHT20 sensor data\n");
+                    run_time_config.data.settings.options.data_valid = SENS_DATA_NOT_VALID; // Data not valid
+                } else {
+                    printf("DHT20 sensor data read successfully: Temperature = %.2f, Humidity = %.2f\n", 
+                           run_time_config.data.temperature, run_time_config.data.humidity);
+                    run_time_config.data.settings.options.data_valid = SENS_DATA_VALID; // Data valid
+                }
+            } else {
+                printf("Sensor not available, using default values\n");
+            }
+#else
             // TODO: Add a mechanism to read the sensor data
             run_time_config.data.temperature = 25.0f + ((rand() % 5) - 2); // Example temperature
             run_time_config.data.humidity = 50.0f + ((rand() % 5) - 2); // Example humidity
-//        printf("Temperature: %.2f, Humidity: %.2f\n", run_time_config.data.temperature, run_time_config.data.humidity);
+            printf("Temperature: %.2f, Humidity: %.2f\n", run_time_config.data.temperature, run_time_config.data.humidity);
+#endif // 1
             pre_tick = time_us_64(); // Update the pre_tick to current time 
         }
     }

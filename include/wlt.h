@@ -1,9 +1,9 @@
+#ifndef WLT_H
+#define WLT_H
+
 #include "pico/cyw43_arch.h"
 #include "wlt_tcp.h"
-
-#define DEBUG                               1
-
-#define START_DNS_SERVER                    0
+#include "general.h"
 
 #define WIFI_AP_SSID                        "PICOW-WIFI"
 #define WIFI_AP_PASS                        "PicoWifiPass"
@@ -37,6 +37,10 @@ typedef struct wlt_net_config {
 #define T_FORMAT_FAHRENHEIT     1
 #define OUT_FORMAT_CSV          0
 #define OUT_FORMAT_TXT          1
+#define SENS_NOT_AVAILABLE      0
+#define SENS_AVAILABLE          1
+#define SENS_DATA_NOT_VALID     0
+#define SENS_DATA_VALID         1
 #define POLL_READ_TIME_MIN      1   // Minimum poll read sensor time in seconds (1 second)
 #define POLL_READ_TIME_MAX      63  // Maximum poll read sensor time in seconds (6 bits)
 #define POLL_READ_TIME_DFLT     30  // Default poll read sensor time in seconds
@@ -49,7 +53,9 @@ typedef union settings {
         uint8_t poll_time   : 6; // Bit 2-7 - Poll time in seconds (0-63 seconds)
         
         uint8_t trd_hyst    : 3; // Bit 8-10 - Number of consecutive read to trigger thresholds
-        uint8_t reserved    : 5; // Bit 14 - Reserved for future use
+        uint8_t sens_avail  : 1; // Bit 11 - Sensor availability: 0 = not available, 1 = available
+        uint8_t data_valid  : 1; // Bit 12 - tell me if data read from sensor is valid: 0 = not valid, 1 = valid
+        uint8_t reserved    : 3; // Bit 13-15 - Reserved for future use
     } options;
 } settings_t;
 
@@ -94,3 +100,5 @@ typedef struct wlt_server {
     ip_addr_t ip_addr;
     ip_addr_t ip_mask;
 } wls_server_t;
+
+#endif // WLT_H

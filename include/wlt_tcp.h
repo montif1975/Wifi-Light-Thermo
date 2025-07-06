@@ -1,3 +1,6 @@
+#ifndef WLT_TCP_H
+#define WLT_TCP_H
+
 #include "stdbool.h"
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
@@ -132,6 +135,16 @@ location.reload();\
 <div class=\"info-data\">\
 <label><span class=\"value\">%.02f %s</span></label>\
 <label><span class=\"value\">%.02f %%RH</span></label>\
+</div>\
+</div>\
+</body>\
+</html>\r\n"
+
+#define INFO_REPLAY_BODY_NOT_VALID         "<body>\
+<div class=\"info-container\">\
+<h2>WiFi Sensor</h2>\
+<div class=\"info-data\">\
+<p>Sensor not available or last data read is not valid!</p>\
 </div>\
 </div>\
 </body>\
@@ -419,3 +432,5 @@ typedef struct TCP_CONNECT_STATE_T_ {
 
 bool tcp_server_open(void *arg, const char *ap_name);
 void tcp_server_close(TCP_SERVER_T *state);
+
+#endif // WLT_TCP_H

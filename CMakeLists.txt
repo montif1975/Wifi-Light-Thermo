@@ -38,6 +38,7 @@ pico_sdk_init()
 add_executable(wlt
     wlt.c
     wlt_tcp.c
+    dht20.c
     dhcpserver/dhcpserver.c
     dnsserver/dnsserver.c
 )
@@ -49,6 +50,9 @@ pico_set_program_version(wlt "0.1")
 target_link_libraries(wlt
         pico_cyw43_arch_lwip_poll
         pico_stdlib
+        hardware_gpio
+        hardware_i2c
+        hardware_uart
 )
 
 # Add the standard include files to the build

@@ -267,10 +267,16 @@ static int fill_server_content(const char *request, const char *params, char *re
                     return 0; // Error
                 }
                 else {
-                    len += snprintf(result + len, max_result_len - len, INFO_REPLY_BODY,
-                        pconfig->data.temperature,
-                        (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "&degC" : "&degF"),
-                        pconfig->data.humidity);
+                    if (pconfig->data.settings.options.data_valid == SENS_DATA_NOT_VALID) {
+                        // If data is not valid, show a message
+                        len += snprintf(result + len, max_result_len - len, INFO_REPLAY_BODY_NOT_VALID);
+                    } else {
+                        // Fill in the body with the sensor data
+                        len += snprintf(result + len, max_result_len - len, INFO_REPLY_BODY,
+                                        (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? pconfig->data.temperature : C2F(pconfig->data.temperature)),
+                                        (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "&degC" : "&degF"),
+                                        pconfig->data.humidity);
+                    }
                 }      
                 break;
 
@@ -537,6 +543,8 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                     // If the request is for a CSS file, set content type to text/css
                     con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS, 200, con_state->result_len, "css");
                 } else {
+                    // TODO add "Content-Type: image/x-icon" when request is for favicon.ico
+
                     // Otherwise, set content type to text/html
                     con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS, 200, con_state->result_len, "html");
                 }
