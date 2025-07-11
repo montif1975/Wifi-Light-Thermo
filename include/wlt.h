@@ -11,6 +11,8 @@
 #define WIFI_SSID                           "SSID"  
 #define WIFI_PASS                           "12345678"
 
+#define WIFI_DEFAULT_DEVICENAME             "WiFi Sensor"
+
 #define GPIO_SELECT_WIFI_MODE               22
 
 typedef enum wlt_wifi_mode {
@@ -25,7 +27,10 @@ typedef enum wlt_error{
 } wlt_error_t;
 
 typedef struct wlt_net_config {
+    uint8_t devicename[32];
     uint8_t wifi_mode;
+    uint8_t wifi_option; // reserved for future use
+    uint8_t reserved[2]; // reserved for future use
     uint8_t wifi_ssid[32];
     uint8_t wifi_pass[64];
     u32_t ipaddr;

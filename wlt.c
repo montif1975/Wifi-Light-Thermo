@@ -45,9 +45,12 @@ void wlt_init_run_time_config(wlt_run_time_config_t *config) {
         printf("Invalid argument: config is NULL\n");
         return;
     }
+    // initialize the configuration structure
+    memset(config, 0, sizeof(wlt_run_time_config_t));
+    strncpy((char *)config->net_config.devicename, WIFI_DEFAULT_DEVICENAME, sizeof(config->net_config.devicename) - 1);
+    config->net_config.devicename[sizeof(config->net_config.devicename) - 1] = '\0'; // Ensure null termination
+
     config->net_config.wifi_mode = WLT_WIFI_MODE_STA;
-    memset(config->net_config.wifi_ssid, 0, sizeof(config->net_config.wifi_ssid));
-    memset(config->net_config.wifi_pass, 0, sizeof(config->net_config.wifi_pass));
     config->data.settings.options.t_format = T_FORMAT_CELSIUS; // Default temperature format is Celsius
     config->data.settings.options.out_format = OUT_FORMAT_CSV; // Default output format is CSV
     config->data.settings.options.poll_time = POLL_READ_TIME_DFLT; // Default poll time is 5 seconds

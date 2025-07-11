@@ -75,6 +75,8 @@ static err_t tcp_server_sent(void *arg, struct tcp_pcb *pcb, u16_t len) {
 
 static int build_req_settings_form(char *result, size_t max_result_len) {
     // Build the settings form
+    // NOTE: Wireshark tell me that this packet is malformed but the browser seems to handle it correctly (no error reported)
+    // I see 3 0x00 bytes at the end of the packet, but I don't know why
     int len = 0;
     int len2copy = 0;
 
@@ -91,7 +93,7 @@ static int build_req_settings_form(char *result, size_t max_result_len) {
         return 0; // Error
     }   
     // copy the wifi form
-    len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FORM_WIFI, pconfig->net_config.wifi_ssid);
+    len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_FORM_WIFI, pconfig->net_config.wifi_ssid,pconfig->net_config.devicename);
     if ((len2copy > 0) && (len2copy < (max_result_len - len))) {
         len += len2copy;
     } else {
@@ -124,6 +126,9 @@ static int build_req_settings_form(char *result, size_t max_result_len) {
     if (len < 0) {
         printf("Error generating settings content\n");
         return 0; // Error
+    }
+    else {
+        printf("Settings content generated successfully, length: %d\n", len);
     }
 
     return len;
@@ -184,6 +189,37 @@ static int build_req_adv_settings_form(char *result, size_t max_result_len) {
     }
 
     return len;
+}
+
+static void fix_devname(const char *src, size_t src_len, char *dest, size_t dest_len) {
+    // Ensure the destination is empty
+    memset(dest, 0, dest_len);
+    char *c, *dest_start = dest;
+
+    // Copy the source to the destination, ensuring we don't overflow
+    // and replace "%20" or "+" with spaces
+    if (src_len >= dest_len) {
+        src_len = dest_len - 1; // Leave space for null terminator
+    }
+    // Replace '%20' or '+' with spaces in the source string
+    // This is necessary because when using GET method, spaces in the devicename are encoded
+    // as '%20' or '+' in the URL, so we need to replace them with spaces
+    for (c = (char *)src; *c && (c - src < src_len); c++) {
+        if (*c == '%' && *(c + 1) == '2' && *(c + 2) == '0') {
+            *dest++ = ' '; // Replace '%20' with space
+            c += 2; // Skip the next two characters
+        } else if (*c == '+') {
+            *dest++ = ' '; // Replace '+' with space
+        } else {
+            *dest++ = *c; // Copy the character
+        }
+    } 
+    // Null-terminate the destination string
+    if (dest_len > 0) {
+        *dest = '\0';
+    }
+    printf("Fixed devicename: '%s'\n", dest_start);
+    return;    
 }
 
 static int fill_server_content(const char *request, const char *params, char *result, size_t max_result_len) {
@@ -265,37 +301,40 @@ static int fill_server_content(const char *request, const char *params, char *re
                 break;
 
             case HTTP_REQ_INFO:
-                // first copy the head section and then the body
-                len2copy = strlen(INFO_REPLY_HEAD);
-                if (len2copy >= max_result_len) {
-                    printf("Result buffer too small for info head (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                // copy the info head
+                len += snprintf(result + len, max_result_len - len, INFO_REPLY_HEAD);
+                if (len < 0) {
+                    printf("Error generating info content\n");
                     return 0; // Error
                 }
-                else {
-                    len += snprintf(result + len, max_result_len - len, INFO_REPLY_HEAD);
+                else if (len >= max_result_len) {
+                    printf("Result buffer too small for info head (len=%d, max_result_len=%zu)\n", len, max_result_len);
+                    return 0; // Error
+                }
+                // copy the info body
+                if (pconfig->data.settings.options.data_valid == SENS_DATA_NOT_VALID) {
+                    // If data is not valid, show a message
+                    len += snprintf(result + len, max_result_len - len, INFO_REPLAY_BODY_NOT_VALID, pconfig->net_config.devicename);
+                } else {
+                    // Fill in the body with the sensor data
+                    len += snprintf(result + len, max_result_len - len, INFO_REPLY_BODY,
+                                    pconfig->net_config.devicename,
+                                    (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? pconfig->data.temperature : C2F(pconfig->data.temperature)),
+                                    (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "&degC" : "&degF"),
+                                    pconfig->data.humidity);
                 }
                 if (len < 0) {
                     printf("Error generating info content\n");
                     return 0; // Error
                 }
-                // check if we have enough space for the body
-                len2copy = strlen(INFO_REPLY_BODY);
-                if (len + len2copy >= max_result_len) {
-                    printf("Result buffer too small for info content body (len=%d, len2copy=%d, max_result_len=%zu)\n", len, len2copy, max_result_len);
+                else if (len >= max_result_len) {
+                    printf("Result buffer too small for info body (len=%d, max_result_len=%zu)\n", len, max_result_len);
                     return 0; // Error
                 }
-                else {
-                    if (pconfig->data.settings.options.data_valid == SENS_DATA_NOT_VALID) {
-                        // If data is not valid, show a message
-                        len += snprintf(result + len, max_result_len - len, INFO_REPLAY_BODY_NOT_VALID);
-                    } else {
-                        // Fill in the body with the sensor data
-                        len += snprintf(result + len, max_result_len - len, INFO_REPLY_BODY,
-                                        (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? pconfig->data.temperature : C2F(pconfig->data.temperature)),
-                                        (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "&degC" : "&degF"),
-                                        pconfig->data.humidity);
-                    }
-                }      
+#if DEBUG
+                else
+                    printf("Info content generated successfully, length: %d\n", len);
+#endif
                 break;
 
             case HTTP_REQ_SETTINGS:
@@ -334,6 +373,7 @@ static int fill_server_content(const char *request, const char *params, char *re
                     char *pwd = NULL;
                     char *scale = NULL;
                     char *oform = NULL;
+                    char *devname = NULL;
 
                     // Split params by '&'
                     char *param = strtok((char *)params, "&");
@@ -342,6 +382,8 @@ static int fill_server_content(const char *request, const char *params, char *re
                             ssid = param + 5; // Skip "ssid="
                         } else if (strncmp(param, "pwd=", 4) == 0) {
                             pwd = param + 4; // Skip "pwd="
+                        } else if (strncmp(param, "devname=",8) == 0) {
+                            devname = param + 8; // Skip "devname="
                         } else if (strncmp(param, "scale=", 6) == 0) {
                             scale = param + 6; // Skip "scale="
                         } else if (strncmp(param, "oform=", 6) == 0) {
@@ -351,9 +393,13 @@ static int fill_server_content(const char *request, const char *params, char *re
                     }
 
                     // Update the configuration
-                    if (ssid && pwd && scale && oform) {
+                    if (ssid && pwd && devname && scale && oform) {
                         strncpy((char *)pconfig->net_config.wifi_ssid, ssid, sizeof(pconfig->net_config.wifi_ssid) - 1);
                         strncpy((char *)pconfig->net_config.wifi_pass, pwd, sizeof(pconfig->net_config.wifi_pass) - 1);
+                        // when use method GET, if the original devicename contains spaces, they are replaced with '%20' or '+' in the URL,
+                        // so we need to replace there with spaces
+                        fix_devname(devname,strlen(devname),pconfig->net_config.devicename, sizeof(pconfig->net_config.devicename));
+                        //strncpy((char *)pconfig->net_config.devicename, devname, sizeof(pconfig->net_config.devicename) - 1);
                         pconfig->data.settings.options.t_format = (strcmp(scale, "C") == 0) ? T_FORMAT_CELSIUS : T_FORMAT_FAHRENHEIT;
                         pconfig->data.settings.options.out_format = (strcmp(oform, "TXT") == 0) ? OUT_FORMAT_TXT : OUT_FORMAT_CSV;
 
@@ -540,6 +586,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
             }
 
             // Generate content
+            memset(con_state->result, 0, sizeof(con_state->result));
             con_state->result_len = fill_server_content(request, params, con_state->result, sizeof(con_state->result));
 
             // Check we had enough buffer space

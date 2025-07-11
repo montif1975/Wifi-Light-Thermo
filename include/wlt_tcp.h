@@ -9,12 +9,8 @@
 #define POLL_TIME_S                         5
 #define HTTP_GET                            "GET"
 #define HTTP_POST                           "POST"
-#define HTTP_RESPONSE_HEADERS               "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: text/%s; charset=utf-8\nConnection: close\n\n"
-#define HTTP_RESPONSE_HEADERS_IMAGE          "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: image/%s\nConnection: close\n\n"
-
-//#define INFO_BODY                           "<html><body><h1>Hello from My Pico.</h1><p>Wifi SSID: %s</p><p>Wifi Password: %s</p><p>IP Address: %s</p><p>IP Mask: %s</p><p>IP Gateway: %s</p></body></html>"
-//#define INFO_BODY_AP                        "<html><body><h1>Hello from My Pico.</h1><p>Wifi SSID: %s</p><p>Wifi Password: %s</p></body></html>"
-//#define INFO_BODY_REQ                       "<body><h1>WiFi Sensors</h1><p>Temperature: %.02f</p><p>Humidity: %.02f</p></body>"
+#define HTTP_RESPONSE_HEADERS               "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: text/%s; charset=utf-8\nConnection: close\r\n\r\n"
+#define HTTP_RESPONSE_HEADERS_IMAGE         "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: image/%s\nConnection: close\r\n\r\n"
 
 #define STYLE_CSS                           "body {\
 font-family: Arial, sans-serif;\
@@ -121,18 +117,17 @@ font-weight: bold;\
 <html lang=\"en\">\
 <head>\
 <meta charset=\"UTF-8\">\
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\
 <title>Sensor info</title>\
 <link rel=\"stylesheet\" type=\"text/css\" href=\"style_info.css\">\
 <script>\
-setInterval(() => {\
-location.reload();\
-}, 10000);\
+setInterval(() => { location.reload(); }, 10000);\
 </script>\
 </head>"
 
 #define INFO_REPLY_BODY                     "<body>\
 <div class=\"info-container\">\
-<h2>WiFi Sensor</h2>\
+<h2>%s</h2>\
 <div class=\"info-data\">\
 <label><span class=\"value\">%.02f %s</span></label>\
 <label><span class=\"value\">%.02f %%RH</span></label>\
@@ -143,7 +138,7 @@ location.reload();\
 
 #define INFO_REPLAY_BODY_NOT_VALID         "<body>\
 <div class=\"info-container\">\
-<h2>WiFi Sensor</h2>\
+<h2>%s</h2>\
 <div class=\"info-data\">\
 <p>Sensor not available or last data read is not valid!</p>\
 </div>\
@@ -170,6 +165,8 @@ location.reload();\
 <input type=\"text\" id=\"ssid\" name=\"ssid\" value=\"%s\">\
 <label for=\"pwd\">Password</label>\
 <input type=\"password\" id=\"pwd\" name=\"pwd\" value=\"***\">\
+<label for=\"devname\">Device Name</label>\
+<input type=\"text\" id=\"devname\" name=\"devname\" value=\"%s\">\
 <h3>Sensor config</h3>\
 <hr>\
 <div class=\"sc\">"
@@ -352,10 +349,10 @@ location.reload();\
 
 #define API_INFO_REPLY                      "{\n\"T\":\"%.2f\",\n\"TF\":\"%s\",\n\"H\":\"%.2f\"\n}"
 
-#define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" INFO_URL "\n\n"
-#define HTTP_RESPONSE_NOT_FOUND             "HTTP/1.1 404 Not Found\nContent-Length: 0\nConnection: close\n\n"
-#define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\n\n"
-#define HTTP_RESPONSE_NOT_IMPL_ERROR        "HTTP/1.1 501 Not implemented\nContent-Length: 0\nConnection: close\n\n"
+#define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" INFO_URL "\r\n"
+#define HTTP_RESPONSE_NOT_FOUND             "HTTP/1.1 404 Not Found\nContent-Length: 0\nConnection: close\r\n"
+#define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\r\n"
+#define HTTP_RESPONSE_NOT_IMPL_ERROR        "HTTP/1.1 501 Not implemented\nContent-Length: 0\nConnection: close\r\n"
 
 #define STYLE_URL                           "/style.css"
 #define STYLE_INFO_URL                      "/style_info.css"
