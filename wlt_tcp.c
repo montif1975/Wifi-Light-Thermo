@@ -8,6 +8,7 @@
 static char *http_req_page_str[HTTP_REQ_MAX] = {
     STYLE_URL,
     STYLE_INFO_URL,
+    FAVICON_URL,
     INFO_URL,
     SETTINGS_URL,
     SETTINGS_FORM_URL,
@@ -242,6 +243,23 @@ static int fill_server_content(const char *request, const char *params, char *re
                 }
                 if (len < 0) {
                     printf("Error generating info content\n");
+                    return 0; // Error
+                }
+                break;
+
+            case HTTP_REQ_FAVICON:
+                // Copy the favicon icon
+                len2copy = favicon_ico_len;
+                if (len2copy >= max_result_len) {
+                    printf("Result buffer too small for favicon (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }
+                else {
+                    memcpy(result, favicon_ico, len2copy);
+                    len = len2copy; // Set the length to the length of the favicon
+                }
+                if (len < 0) {
+                    printf("Error generating favicon content\n");
                     return 0; // Error
                 }
                 break;
@@ -543,10 +561,17 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                     // If the request is for a CSS file, set content type to text/css
                     con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS, 200, con_state->result_len, "css");
                 } else {
-                    // TODO add "Content-Type: image/x-icon" when request is for favicon.ico
-
-                    // Otherwise, set content type to text/html
-                    con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS, 200, con_state->result_len, "html");
+                    if(strstr(request, ".ico") != NULL) {
+                        // If the request is for a favicon.ico file, set content type to image/x-icon
+                        con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS_IMAGE, 200, con_state->result_len, "x-icon");
+                    }
+                    else if(strstr(request, ".js") != NULL) {
+                        // If the request is for a JS file, set content type to application/javascript
+                        con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS, 200, con_state->result_len, "javascript");
+                    }
+                    else
+                        // Otherwise, set content type to text/html
+                        con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS, 200, con_state->result_len, "html");
                 }
                 if (con_state->header_len > sizeof(con_state->headers) - 1) {
                     printf("Too much header data %d\n", con_state->header_len);

@@ -10,6 +10,7 @@
 #define HTTP_GET                            "GET"
 #define HTTP_POST                           "POST"
 #define HTTP_RESPONSE_HEADERS               "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: text/%s; charset=utf-8\nConnection: close\n\n"
+#define HTTP_RESPONSE_HEADERS_IMAGE          "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: image/%s\nConnection: close\n\n"
 
 //#define INFO_BODY                           "<html><body><h1>Hello from My Pico.</h1><p>Wifi SSID: %s</p><p>Wifi Password: %s</p><p>IP Address: %s</p><p>IP Mask: %s</p><p>IP Gateway: %s</p></body></html>"
 //#define INFO_BODY_AP                        "<html><body><h1>Hello from My Pico.</h1><p>Wifi SSID: %s</p><p>Wifi Password: %s</p></body></html>"
@@ -356,9 +357,10 @@ location.reload();\
 #define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\n\n"
 #define HTTP_RESPONSE_NOT_IMPL_ERROR        "HTTP/1.1 501 Not implemented\nContent-Length: 0\nConnection: close\n\n"
 
-#define INFO_URL                            "/info"
 #define STYLE_URL                           "/style.css"
 #define STYLE_INFO_URL                      "/style_info.css"
+#define FAVICON_URL                         "/favicon.ico"
+#define INFO_URL                            "/info"
 #define SETTINGS_URL                        "/settings"
 #define SETTINGS_FORM_URL                   "/setparams"
 #define ADVANCED_URL                        "/advparams"
@@ -387,6 +389,7 @@ location.reload();\
 enum http_req_page {
     HTTP_REQ_STYLE,
     HTTP_REQ_STYLE_INFO,
+    HTTP_REQ_FAVICON,
     HTTP_REQ_INFO,
     HTTP_REQ_SETTINGS,
     HTTP_REQ_SETTINGS_FORM,

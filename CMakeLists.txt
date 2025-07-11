@@ -39,6 +39,7 @@ add_executable(wlt
     wlt.c
     wlt_tcp.c
     dht20.c
+    favicon_ico.c
     dhcpserver/dhcpserver.c
     dnsserver/dnsserver.c
 )
