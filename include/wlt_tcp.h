@@ -11,6 +11,7 @@
 #define HTTP_POST                           "POST"
 #define HTTP_RESPONSE_HEADERS               "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: text/%s; charset=utf-8\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_HEADERS_IMAGE         "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: image/%s\nConnection: close\r\n\r\n"
+#define HTTP_RESPONSE_HEADERS_JSON          "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: application/%s\nConnection: close\r\n\r\n"
 
 #define STYLE_CSS                           "body {\
 font-family: Arial, sans-serif;\
@@ -132,9 +133,13 @@ setInterval(() => { location.reload(); }, 10000);\
 <label><span class=\"value\">%.02f %s</span></label>\
 <label><span class=\"value\">%.02f %%RH</span></label>\
 </div>\
+<h2 id=\"datetime\"></h2>\
+<script>\
+document.getElementById('datetime').textContent = new Date().toLocaleString();\
+</script>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define INFO_REPLAY_BODY_NOT_VALID         "<body>\
 <div class=\"info-container\">\
@@ -144,7 +149,7 @@ setInterval(() => { location.reload(); }, 10000);\
 </div>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 // Settings page reply
 #define SETTINGS_REPLY_HEAD                 "<!DOCTYPE html>\
@@ -186,7 +191,7 @@ setInterval(() => { location.reload(); }, 10000);\
 <p>Advanced settings are available <a href=\"/advparams\">here</a></p>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define SETTINGS_REPLY_NACK                "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -201,7 +206,7 @@ setInterval(() => { location.reload(); }, 10000);\
 <h3>Please switch your device in AP mode and reboot it to configure.</h3>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define SETTINGS_SAVE_ACK                   "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -216,7 +221,7 @@ setInterval(() => { location.reload(); }, 10000);\
 <h3><a href=\"/info\">Click here to access sensor's data</a></h3>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define SETTINGS_SAVE_NACK_EINVAL           "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -231,7 +236,7 @@ setInterval(() => { location.reload(); }, 10000);\
 <h3><a href=\"/settings\">Click here to configure</a></h3>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define SETTINGS_SAVE_NACK_ENOPARAM         "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -246,7 +251,7 @@ setInterval(() => { location.reload(); }, 10000);\
 <h3><a href=\"/settings\">Click here to configure</a></h3>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 // settings advanced reply
 #define ADVANCED_REPLY_HEAD         "<!DOCTYPE html>\
@@ -288,7 +293,7 @@ setInterval(() => { location.reload(); }, 10000);\
 </div>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define ADVANCED_SAVE_ACK                   "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -303,7 +308,7 @@ setInterval(() => { location.reload(); }, 10000);\
 <h3><a href=\"/info\">Click here to access sensor's data</a></h3>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define ADVANCED_SAVE_NACK_EINVAL           "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -318,7 +323,7 @@ setInterval(() => { location.reload(); }, 10000);\
 <h3><a href=\"/advparams\">Click here to configure</a></h3>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define ADVANCED_SAVE_NACK_ENOPARAM         "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -333,7 +338,7 @@ setInterval(() => { location.reload(); }, 10000);\
 <h3><a href=\"/advparams\">Click here to configure</a></h3>\
 </div>\
 </body>\
-</html>\r\n"
+</html>"
 
 #define REPLY_NOT_YET_IMPLEMENTED           "<!DOCTYPE html>\
 <html lang=\"en\">\
@@ -345,14 +350,14 @@ setInterval(() => { location.reload(); }, 10000);\
 <body>\
 <h2>Sorry, this page is not implemented yet!</h2>\
 </body>\
-</html>\r\n"
+</html>"
 
-#define API_INFO_REPLY                      "{\n\"T\":\"%.2f\",\n\"TF\":\"%s\",\n\"H\":\"%.2f\"\n}"
+#define API_INFO_REPLY                      "{\"T\":%.2f,\"TF\":\"%s\",\"H\":%.2f}"
 
-#define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" INFO_URL "\r\n"
-#define HTTP_RESPONSE_NOT_FOUND             "HTTP/1.1 404 Not Found\nContent-Length: 0\nConnection: close\r\n"
-#define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\r\n"
-#define HTTP_RESPONSE_NOT_IMPL_ERROR        "HTTP/1.1 501 Not implemented\nContent-Length: 0\nConnection: close\r\n"
+#define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" INFO_URL "\r\n\r\n"
+#define HTTP_RESPONSE_NOT_FOUND             "HTTP/1.1 404 Not Found\nContent-Length: 0\nConnection: close\r\n\r\n"
+#define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\r\n\r\n"
+#define HTTP_RESPONSE_NOT_IMPL_ERROR        "HTTP/1.1 501 Not implemented\nContent-Length: 0\nConnection: close\r\n\r\n"
 
 #define STYLE_URL                           "/style.css"
 #define STYLE_INFO_URL                      "/style_info.css"
@@ -375,6 +380,7 @@ setInterval(() => { location.reload(); }, 10000);\
 #define API_BASE_URL                        "/api"
 #define API_VERS                            "/v1"
 #define API_GET_INFO_URL                    API_BASE_URL API_VERS "/info"
+#define API_GET_SETTINGS_URL                API_BASE_URL API_VERS "/settings"
 #define API_SET_PARAMS_URL                  API_BASE_URL API_VERS "/setparams"
 #define API_SET_ADVANCED_PARAMS_URL         API_BASE_URL API_VERS "/setadvparams"
 #define API_SET_HIGH_TEMP_URL               API_BASE_URL API_VERS "/sethightemp"
@@ -405,6 +411,7 @@ enum http_req_page {
 
 enum http_req_api {
     HTTP_API_INFO,
+    HTTP_API_GET_SETTINGS,
     HTTP_API_SET_PARAMS,
     HTTP_API_SET_ADVANCED_PARAMS,
     HTTP_API_SET_HIGH_TEMP,

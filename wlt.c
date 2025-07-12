@@ -54,6 +54,7 @@ void wlt_init_run_time_config(wlt_run_time_config_t *config) {
     config->data.settings.options.t_format = T_FORMAT_CELSIUS; // Default temperature format is Celsius
     config->data.settings.options.out_format = OUT_FORMAT_CSV; // Default output format is CSV
     config->data.settings.options.poll_time = POLL_READ_TIME_DFLT; // Default poll time is 5 seconds
+    config->data.settings.options.trd_hyst = 3; // Default threshold hysteresis is 3 consecutive reads
     config->data.settings.options.sens_avail = SENS_NOT_AVAILABLE; // Sensor not available by default
     config->data.settings.options.data_valid = SENS_DATA_NOT_VALID; // Data not valid by default
     config->data.temperature = 0.0f; // Initialize temperature
@@ -226,12 +227,14 @@ int main()
             // Set the wls_server ip_addr and ip_mask
             wls_server.ip_addr.addr = cyw43_state.netif[0].ip_addr.addr;
             wls_server.ip_mask.addr = cyw43_state.netif[0].netmask.addr;
+#if DEBUG
             printf("IP address (cyw43) )0x%X\n", cyw43_state.netif[0].ip_addr.addr);
             printf("IP address (wls_server) 0x%X\n", wls_server.ip_addr.addr);
+#endif // DEBUG
             // Read the ip address in a human readable way
-            printf("IP address %s\n", ipaddr_ntoa(&cyw43_state.netif[0].ip_addr));
-            printf("IP mask %s\n", ipaddr_ntoa(&cyw43_state.netif[0].netmask));
-            printf("Gateway %s\n", ipaddr_ntoa(&cyw43_state.netif[0].gw));            
+            printf("IP address %s\n",ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.ipaddr)));
+            printf("IP mask %s\n", ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.ipmask)));
+            printf("Gateway %s\n", ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.gwaddr)));
         }
     }
 

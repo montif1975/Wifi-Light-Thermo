@@ -26,6 +26,7 @@ static char *http_req_page_str[HTTP_REQ_MAX] = {
 
 static char *http_req_api_str[HTTP_API_MAX] = {
     API_GET_INFO_URL,
+    API_GET_SETTINGS_URL,
     API_SET_PARAMS_URL,
     API_SET_HIGH_TEMP_URL,
     API_SET_LOW_TEMP_URL, 
@@ -519,11 +520,272 @@ static int fill_server_content(const char *request, const char *params, char *re
                     len = len2copy;
                     break;
 
+                case HTTP_API_GET_SETTINGS:
+                    char treshold_trigger[5]; // Buffer for threshold trigger
+                    // Generate API settings response
+                    /*
+                        {
+                        "WIFI":{
+                            "DEVNAME":"studio",
+                            "SSID":"FASTWEB",
+                            "MODE":"AP",
+                            "IPADDR":"192.168.1.63",
+                            "NET":"255.255.255.0",
+                            "GW":"192.168.1.1"
+                        },
+                        "PARAMS":{
+                            "TF":"C",
+                            "OF":"CSV",
+                            "PT":30,
+                            "TH":3
+                        },
+                        "THRESH":{
+                            "HTT":{
+                                "VAL":20,
+                                "TR":"H"
+                            },
+                            "HTH":{
+                                "VAL":20,
+                                "TR":"H"
+                            },
+                            "HTP":{
+                                "VAL":20,
+                                "TR":"H"
+                            },
+                            "LTT":{
+                                "VAL":20,
+                                "TR":"L"
+                            },
+                            "LTH":{
+                                "VAL":20,
+                                "TR":"L"
+                            },
+                            "LTP":{
+                                "VAL":20,
+                                "TR":"NONE"
+                            }
+                        }
+                        }                   
+                    */
+                    if (pconfig == NULL) {
+                        printf("pconfig is NULL\n");
+                        return 0; // Error
+                    }
+                    // Start building the JSON response
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "{\"WIFI\":{\"DEVNAME\":\"%s\",\"SSID\":\"%s\",\"MODE\":\"%s\",",
+                                    pconfig->net_config.devicename,
+                                    pconfig->net_config.wifi_ssid,
+                                    (pconfig->net_config.wifi_mode == WLT_WIFI_MODE_AP) ? "AP" : "STA");
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    // Add IP address, netmask, and gateway
+#if 1
+                    // I believe that I found a bug in snprintf() or in ipaddr_ntoa(),
+                    // if I pass all two or three parameters, the sprintf use only the last one
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"IPADDR\":\"%s\",",
+                                    ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.ipaddr)));
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"NET\":\"%s\",",
+                                    ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.ipmask)));
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"GW\":\"%s\"},",
+                                    ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.gwaddr)));
+#else
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"IPADDR\":\"%s\",\"NET\":\"%s\",\"GW\":\"%s\"},",
+                                    ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.ipaddr)),
+                                    ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.ipmask)),
+                                    ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.gwaddr)));
+#endif
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    // Add parameters
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"PARAMS\":{\"TF\":\"%s\",\"OF\":\"%s\",\"PT\":%d,\"TH\":%d},",
+                                    (pconfig->data.settings.options.t_format == T_FORMAT_CELSIUS) ? "C" : "F",
+                                    (pconfig->data.settings.options.out_format == OUT_FORMAT_TXT) ? "TXT" : "CSV",
+                                    pconfig->data.settings.options.poll_time,
+                                    pconfig->data.settings.options.trd_hyst);
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    // Add thresholds high
+                    memset(treshold_trigger, 0, sizeof(treshold_trigger));
+                    switch(pconfig->data.thresholds.high.temperature.trigger) {
+                        case TRD_TRIGGER_HIGH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
+                            break;
+                        case TRD_TRIGGER_LOW:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
+                            break;
+                        case TRD_TRIGGER_BOTH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
+                            break;
+                        case TRD_TRIGGER_NONE:
+                        default:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
+                            break;
+                    }
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"THRESH\":{\"HTT\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
+                                    pconfig->data.thresholds.high.temperature.value,
+                                    treshold_trigger);
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    memset(treshold_trigger, 0, sizeof(treshold_trigger));
+                    switch(pconfig->data.thresholds.high.humidity.trigger) {
+                        case TRD_TRIGGER_HIGH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
+                            break;
+                        case TRD_TRIGGER_LOW:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
+                            break;
+                        case TRD_TRIGGER_BOTH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
+                            break;
+                        case TRD_TRIGGER_NONE:
+                        default:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
+                            break;
+                    }
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"HTH\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
+                                    pconfig->data.thresholds.high.humidity.value,
+                                    treshold_trigger);
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    memset(treshold_trigger, 0, sizeof(treshold_trigger));
+                    switch(pconfig->data.thresholds.high.pressure.trigger) {
+                        case TRD_TRIGGER_HIGH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
+                            break;
+                        case TRD_TRIGGER_LOW:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
+                            break;
+                        case TRD_TRIGGER_BOTH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
+                            break;
+                        case TRD_TRIGGER_NONE:
+                        default:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
+                            break;
+                    }
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"HTP\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
+                                    pconfig->data.thresholds.high.pressure.value,
+                                    treshold_trigger);
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    // Add thresholds low
+                    memset(treshold_trigger, 0, sizeof(treshold_trigger));
+                    switch(pconfig->data.thresholds.low.temperature.trigger) {
+                        case TRD_TRIGGER_HIGH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
+                            break;
+                        case TRD_TRIGGER_LOW:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
+                            break;
+                        case TRD_TRIGGER_BOTH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
+                            break;
+                        case TRD_TRIGGER_NONE:
+                        default:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
+                            break;
+                    }
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"LTT\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
+                                    pconfig->data.thresholds.low.temperature.value,
+                                    treshold_trigger);
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    memset(treshold_trigger, 0, sizeof(treshold_trigger));
+                    switch(pconfig->data.thresholds.low.humidity.trigger) {
+                        case TRD_TRIGGER_HIGH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
+                            break;
+                        case TRD_TRIGGER_LOW:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
+                            break;
+                        case TRD_TRIGGER_BOTH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
+                            break;
+                        case TRD_TRIGGER_NONE:
+                        default:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
+                            break;
+                    }
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"LTH\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
+                                    pconfig->data.thresholds.low.humidity.value,
+                                    treshold_trigger);
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    memset(treshold_trigger, 0, sizeof(treshold_trigger));
+                    switch(pconfig->data.thresholds.low.pressure.trigger) {
+                        case TRD_TRIGGER_HIGH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
+                            break;
+                        case TRD_TRIGGER_LOW:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
+                            break;
+                        case TRD_TRIGGER_BOTH:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
+                            break;
+                        case TRD_TRIGGER_NONE:
+                        default:
+                            snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
+                            break;
+                    }
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "\"LTP\":{\"VAL\":%.02f,\"TR\":\"%s\"}}}",
+                                    pconfig->data.thresholds.low.pressure.value,
+                                    treshold_trigger);
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    break;
+
+                case HTTP_API_SET_PARAMS:
+                    break;
+
+                case HTTP_API_SET_ADVANCED_PARAMS:
+                    break;
+
                 case HTTP_API_SET_HIGH_TEMP:
                 case HTTP_API_SET_LOW_TEMP:
                 case HTTP_API_SET_HIGH_HUM:
                 case HTTP_API_SET_LOW_HUM:
-                case HTTP_API_SET_PARAMS:
                     // Handle setting parameters (not implemented)
                     len = snprintf(result, max_result_len, "{\"status\":\"not_implemented_yet\"}");
                     if (len >= max_result_len) {
@@ -612,9 +874,9 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                         // If the request is for a favicon.ico file, set content type to image/x-icon
                         con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS_IMAGE, 200, con_state->result_len, "x-icon");
                     }
-                    else if(strstr(request, ".js") != NULL) {
-                        // If the request is for a JS file, set content type to application/javascript
-                        con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS, 200, con_state->result_len, "javascript");
+                    else if(strstr(request, "/api/") != NULL) {
+                        // If the request is an API set content type to application/json
+                        con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS_JSON, 200, con_state->result_len,"json");
                     }
                     else
                         // Otherwise, set content type to text/html
