@@ -15,9 +15,88 @@
 #include "dnsserver.h"
 #include "include/wlt.h"
 #include "include/dht20.h"
+#include "include/uart.h"
 
 // global variables
 wlt_run_time_config_t *pconfig;
+
+
+/*
+ * Function: wlt_send_to_uart()
+ * Send to UART the temperature and humidity in the requested format.
+ */
+void wlt_send_to_uart(float temperature, float humidity, uint8_t temp_format, uint8_t out_format)
+{
+    char app_string[24];
+    float temp;
+
+    memset(app_string,0,sizeof(app_string));
+    if(temp_format == T_FORMAT_FAHRENHEIT)
+        temp = C2F(temperature);
+    else
+        temp = temperature;
+
+    switch(out_format)
+    {
+        case OUT_FORMAT_TXT:
+            // add \r\n in order to be sure to print one measure on each line 
+            // in the Windows/Unix terminal (without change its configuration)
+            if(temp_format == T_FORMAT_FAHRENHEIT)
+                sprintf(app_string,"%.02f °F - %.02f %%RH\r\n",temp,humidity);
+            else
+                sprintf(app_string,"%.02f °C - %.02f %%RH\r\n",temp,humidity);
+            break;
+
+        case OUT_FORMAT_CSV:
+            // use ";" as CSV separator
+            sprintf(app_string,"%.02f;%.02f\r\n",temp,humidity);
+            break;
+        
+        default:
+            break;
+    }
+    // send the string to UART
+    uart_puts(UART_ID, app_string);
+
+    return;
+}
+
+/*
+ * Function: wlt_init_uart() 
+*/
+void wlt_init_uart(void) {
+    int baudrate;
+    // Set up our UART with a basic baud rate.
+    uart_init(UART_ID, 2400);
+
+    // Set the TX and RX pins by using the function select on the GPIO
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+
+    // Actually, we want a different speed
+    // The call will return the actual baud rate selected, which will be as close as
+    // possible to that requested
+    baudrate = uart_set_baudrate(UART_ID, BAUD_RATE);
+    PRINT_GEN_DEBUG("Set up UART at baudrate %d\n", baudrate);
+
+    // Set UART flow control CTS/RTS, we don't want these, so turn them off
+    uart_set_hw_flow(UART_ID, false, false);
+    // Set our data format
+    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
+    // Turn off FIFO's - we want to do this character by character
+    uart_set_fifo_enabled(UART_ID, false);
+
+    // for the moment we don't use the UART in RX mode
+
+    // Now enable the UART to send interrupts - RX only
+//    uart_set_irq_enables(UART_ID, true, false);
+
+    // initialization UART completed, send a welcome message
+    uart_puts(UART_ID, "\r\nlightThermo ready to work...\r\n");
+    uart_puts(UART_ID, "Read temperature and humidity every minutes\r\n");
+
+    return;
+}
 
 /*
  * Function: wlt_init_port_sensor()
@@ -164,6 +243,8 @@ int main()
         run_time_config.data.settings.options.sens_avail = SENS_AVAILABLE;
     }
 
+    wlt_init_uart();
+
     // configure the GPIO to select the wifi mode.
     wlt_configure_gpio_select_wifi_mode();
 
@@ -269,25 +350,24 @@ int main()
             // If more than poll_time second has passed, we can read the sensor data
             printf("Reading sensor data after %llu microseconds\n", (tick - pre_tick));
             // read the sensor data and update the DB
-#if 1
             if (run_time_config.data.settings.options.sens_avail == SENS_AVAILABLE) {
                 if (DHT20_read_data(&run_time_config.data.temperature, &run_time_config.data.humidity) != 0) {
                     printf("Failed to read DHT20 sensor data\n");
                     run_time_config.data.settings.options.data_valid = SENS_DATA_NOT_VALID; // Data not valid
                 } else {
                     printf("DHT20 sensor data read successfully: Temperature = %.2f, Humidity = %.2f\n", 
-                           run_time_config.data.temperature, run_time_config.data.humidity);
+                           run_time_config.data.temperature,
+                           run_time_config.data.humidity);
                     run_time_config.data.settings.options.data_valid = SENS_DATA_VALID; // Data valid
+                    // Send the data to UART
+                    wlt_send_to_uart(run_time_config.data.temperature,
+                                     run_time_config.data.humidity,
+                                     run_time_config.data.settings.options.t_format,
+                                     run_time_config.data.settings.options.out_format);
                 }
             } else {
                 printf("Sensor not available, using default values\n");
             }
-#else
-            // TODO: Add a mechanism to read the sensor data
-            run_time_config.data.temperature = 25.0f + ((rand() % 5) - 2); // Example temperature
-            run_time_config.data.humidity = 50.0f + ((rand() % 5) - 2); // Example humidity
-            printf("Temperature: %.2f, Humidity: %.2f\n", run_time_config.data.temperature, run_time_config.data.humidity);
-#endif // 1
             pre_tick = time_us_64(); // Update the pre_tick to current time 
         }
     }
