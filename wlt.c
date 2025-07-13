@@ -16,10 +16,11 @@
 #include "include/wlt.h"
 #include "include/dht20.h"
 #include "include/uart.h"
+#include "include/eeprom_24LC256.h"
 
 // global variables
-wlt_run_time_config_t *pconfig;
-
+wlt_run_time_config_t *prtconfig;
+wlt_config_data_t *pconfig;
 
 /*
  * Function: wlt_send_to_uart()
@@ -64,7 +65,8 @@ void wlt_send_to_uart(float temperature, float humidity, uint8_t temp_format, ui
 /*
  * Function: wlt_init_uart() 
 */
-void wlt_init_uart(void) {
+void wlt_init_uart(void)
+{
     int baudrate;
     // Set up our UART with a basic baud rate.
     uart_init(UART_ID, 2400);
@@ -77,7 +79,7 @@ void wlt_init_uart(void) {
     // The call will return the actual baud rate selected, which will be as close as
     // possible to that requested
     baudrate = uart_set_baudrate(UART_ID, BAUD_RATE);
-    PRINT_GEN_DEBUG("Set up UART at baudrate %d\n", baudrate);
+    PRINT_DEBUG("Set up UART at baudrate %d\n", baudrate);
 
     // Set UART flow control CTS/RTS, we don't want these, so turn them off
     uart_set_hw_flow(UART_ID, false, false);
@@ -101,7 +103,8 @@ void wlt_init_uart(void) {
 /*
  * Function: wlt_init_port_sensor()
 */
-void wlt_init_port_sensor(void) {
+void wlt_init_port_sensor(void)
+{
     // I2C for Sensor (Temp, humidity,etc...)
     // I2C Initialisation. Using it at 400Khz.
     i2c_init(I2C_PORT_SENS, 400*1000);
@@ -115,11 +118,152 @@ void wlt_init_port_sensor(void) {
     return;
 }
 
+
+/*
+ * High level EEPROM functions
+*/ 
+
+/*
+ * Function: wlt_read_config()
+ * Description: This function reads the configuration from the EEPROM.
+ * It returns EE_SUCCESS if the configuration is read correctly, otherwise it returns EE_ERROR. 
+*/
+int wlt_read_config(BYTE *config, int len)
+{
+    int ret;
+
+    PRINT_DEBUG_N("Read config from EEPROM\n");
+
+    ret = i2c_eeprom_read(EEPROM_START_ADDR, config, len);
+
+#if DEBUG
+    int i;
+
+    // print the content of memory read
+    for(i=0; i<len; i++)
+    {
+        printf("0x%02X ",config[i]);
+        if((i + 1) % 8 == 0)
+            printf("\n");
+    }
+#endif
+
+    return ret;
+}
+
+/*
+ * Function: wlt_write_config()
+ * Description: This function writes the configuration to the EEPROM.
+ * It returns EE_SUCCESS if the configuration is written correctly, otherwise it returns EE_ERROR.
+*/
+int wlt_write_config(BYTE *config, int len)
+{
+    int ret = EE_SUCCESS;
+
+    PRINT_DEBUG_N("Write config to EEPROM\n");
+
+    ret = i2c_eeprom_write(EEPROM_START_ADDR, config, len);
+
+    return ret;
+}
+
+/*
+ * Function: check_config()
+ * Description: This function checks the configuration read from the EEPROM.
+ * It returns EE_SUCCESS if the configuration is valid, otherwise it returns EE_ERROR.
+ * The configuration is valid if the control word matches the expected value.
+*/
+int wlt_check_config(BYTE *signature, int len)
+{
+    if (signature == NULL || len < EEPROM_CTRL_WORD_LEN) {
+        return EE_ERROR;
+    }
+
+    // Check the control word
+    if (memcmp(signature, EEPROM_CTRL_WORD, EEPROM_CTRL_WORD_LEN) != 0) {
+        return EE_ERROR;
+    }
+
+    return EE_SUCCESS;
+}
+
+/**
+ * Function: wlt_update_config()
+ * Description: This function updates the configuration (saved in the EEPROM)
+ * with the provided runtime configuration data.
+ */
+void wlt_update_config(wlt_run_time_config_t *rt_config, wlt_config_data_t *config)
+{
+    if (rt_config == NULL || config == NULL) {
+        printf("Invalid argument: rt_config or config is NULL\n");
+        return;
+    }
+    strncpy(config->devicename,rt_config->net_config.devicename, sizeof(config->devicename) - 1);
+    config->devicename[sizeof(config->devicename) - 1] = '\0'; // Ensure null termination
+    strncpy(config->wifi_ssid, rt_config->net_config.wifi_ssid, sizeof(config->wifi_ssid) - 1);
+    config->wifi_ssid[sizeof(config->wifi_ssid) - 1] = '\0'; // Ensure null termination
+    strncpy(config->wifi_pass, rt_config->net_config.wifi_pass, sizeof(config->wifi_pass) - 1);
+    config->wifi_pass[sizeof(config->wifi_pass) - 1] = '\0'; // Ensure null termination
+    config->settings.all_options = rt_config->data.settings.all_options;
+    config->thresholds = rt_config->data.thresholds;
+    // Copy the signature (includes \0 at the end)
+    strncpy(config->signature, EEPROM_CTRL_WORD, EEPROM_CTRL_WORD_LEN);
+ 
+    return;
+}
+
+/*
+ * Function: wlt_load_config()
+ * Description: This function loads the configuration from the EEPROM into the runtime configuration.
+ * It does not return any value.
+ */
+void wlt_load_config(wlt_run_time_config_t *rt_config, wlt_config_data_t *config)
+{
+    if (rt_config == NULL || config == NULL) {
+        printf("Invalid argument: rt_config or config is NULL\n");
+        return;
+    }
+    // Copy the device name
+    strncpy(rt_config->net_config.devicename, config->devicename, sizeof(rt_config->net_config.devicename) - 1);
+    rt_config->net_config.devicename[sizeof(rt_config->net_config.devicename) - 1] = '\0'; // Ensure null termination
+    // Copy the WiFi SSID and password
+    strncpy(rt_config->net_config.wifi_ssid, config->wifi_ssid, sizeof(rt_config->net_config.wifi_ssid) - 1);
+    rt_config->net_config.wifi_ssid[sizeof(rt_config->net_config.wifi_ssid) - 1] = '\0'; // Ensure null termination
+    strncpy(rt_config->net_config.wifi_pass, config->wifi_pass, sizeof(rt_config->net_config.wifi_pass) - 1);
+    rt_config->net_config.wifi_pass[sizeof(rt_config->net_config.wifi_pass) - 1] = '\0'; // Ensure null termination
+    rt_config->data.settings.all_options = config->settings.all_options;
+    rt_config->data.thresholds = config->thresholds; 
+
+    return;
+}
+
+/**
+ * Function: wlt_update_and_save_config()
+ * Description: This function updates the runtime configuration with the provided configuration data
+ * and saves it to the EEPROM.
+ * It does not return any value.
+ */
+void wlt_update_and_save_config(wlt_run_time_config_t *rt_config, wlt_config_data_t *config)
+{
+    wlt_update_config(prtconfig, pconfig);
+    // I don't want to save some runtime data located in settings field (TODO change their position)
+    pconfig->settings.options.sens_avail = SENS_NOT_AVAILABLE;
+    pconfig->settings.options.data_valid = SENS_DATA_NOT_VALID;
+    // Save the configuration to EEPROM
+    if (wlt_write_config((BYTE *)pconfig, sizeof(wlt_config_data_t)) != EE_SUCCESS) {
+        printf("*** ERROR ****\nUnable to write EEPROM (I2C) Memory\n");
+    } else {
+        printf("Configuration written to EEPROM\n");
+    }
+    return;
+}         
+
 /*
 * Function: wlt_init_run_time_config()
-* Description: This function initializes the runtime configuration. 
+* Description: This function initializes the runtime configuration with default values. 
 */
-void wlt_init_run_time_config(wlt_run_time_config_t *config) {
+void wlt_init_run_time_config(wlt_run_time_config_t *config)
+{
     if (config == NULL) {
         printf("Invalid argument: config is NULL\n");
         return;
@@ -162,7 +306,8 @@ void wlt_init_run_time_config(wlt_run_time_config_t *config) {
 * Function: wlt_configure_gpio_select_wifi_mode()
 * Description: This function configures the GPIO to select the wifi mode.
  */
-void wlt_configure_gpio_select_wifi_mode() {
+void wlt_configure_gpio_select_wifi_mode()
+{
     gpio_init(GPIO_SELECT_WIFI_MODE);
     gpio_set_dir(GPIO_SELECT_WIFI_MODE, GPIO_IN);
     gpio_pull_up(GPIO_SELECT_WIFI_MODE);
@@ -220,51 +365,83 @@ int main()
 {
     int ret;
     wlt_run_time_config_t run_time_config;
+    wlt_config_data_t config;
     dhcp_server_t dhcp_server;
     dns_server_t dns_server;
     wls_server_t wls_server;
     char led_on = 1;
     volatile int64_t tick, pre_tick;
 
-    pconfig = &run_time_config;
+    prtconfig = &run_time_config;
+    pconfig = &config;
     srand(to_us_since_boot(get_absolute_time()));
     stdio_init_all();
 
     sleep_ms(2000);
 
-    wlt_init_run_time_config(&run_time_config);
-
+    // hardware initialization
+    i2c_eeprom_init();
     wlt_init_port_sensor();
-    if (DHT20_init() != 0) {
-        printf("Failed to initialize DHT20 sensor\n");
-        run_time_config.data.settings.options.sens_avail = SENS_NOT_AVAILABLE;
-    } else {
-        printf("DHT20 sensor initialized successfully\n");
-        run_time_config.data.settings.options.sens_avail = SENS_AVAILABLE;
+    wlt_init_uart();
+
+    // search config reading from memory
+    ret = 0;
+    // set default configuration
+    wlt_init_run_time_config(prtconfig);
+    memset(&config, 0x0, sizeof(config));
+    if (wlt_read_config((BYTE *)&config, sizeof(config)) != EE_SUCCESS) {
+        printf("*** ERROR ****\nUnable to read EEPROM (I2C) Memory\n");
+        ret = -1;
+    }
+    else {
+        printf("Config data CTRL WORD: %s\n", (char *)&config.signature);
+        // check if the configuration read is valid
+        if (wlt_check_config((char *)pconfig->signature, sizeof(config.signature)) != EE_SUCCESS) {
+            printf("*** ERROR ****\nInvalid configuration read from EEPROM (I2C) Memory\n");
+            ret = -1;
+        } else {
+            printf("Configuration read successfully from EEPROM\n");
+            // configuration read successfully, initialize the runtime configuration loading data from EEPROM
+            wlt_load_config(prtconfig, pconfig);
+        }
+    }
+    if (ret != 0) {
+        printf("Failed to read configuration, using default values\n");
+        wlt_update_config(prtconfig, pconfig);
+        // save the default configuration to EEPROM
+        if (wlt_write_config((BYTE *)&config, sizeof(config)) != EE_SUCCESS) {
+            printf("*** ERROR ****\nUnable to write EEPROM (I2C) Memory\n");
+        } else {
+            printf("Default configuration written to EEPROM\n");
+        }
     }
 
-    wlt_init_uart();
+    if (DHT20_init() != 0) {
+        printf("Failed to initialize DHT20 sensor\n");
+        prtconfig->data.settings.options.sens_avail = SENS_NOT_AVAILABLE;
+    } else {
+        printf("DHT20 sensor initialized successfully\n");
+        prtconfig->data.settings.options.sens_avail = SENS_AVAILABLE;
+    }
 
     // configure the GPIO to select the wifi mode.
     wlt_configure_gpio_select_wifi_mode();
 
     // check the GPIO to select the wifi mode.
-    ret = wlt_check_wifi_mode(&run_time_config);
+    ret = wlt_check_wifi_mode(prtconfig);
     if (ret != WLT_SUCCESS) {
         printf("failed to check the wifi mode\n");
         return -1;
     } else {
-        if(run_time_config.net_config.wifi_mode == WLT_WIFI_MODE_STA) {
+        if(prtconfig->net_config.wifi_mode == WLT_WIFI_MODE_STA) {
             printf("Wi-Fi mode: STA\n");
-            // TODO: Add a mechanism to read the SSID and password from a file or other source
-            // For now, we use hardcoded values for the SSID and password
-            strncpy(run_time_config.net_config.wifi_ssid, WIFI_SSID, sizeof(run_time_config.net_config.wifi_ssid));
-            strncpy(run_time_config.net_config.wifi_pass, WIFI_PASS, sizeof(run_time_config.net_config.wifi_pass));
+            printf("Connecting to Wi-Fi SSID: %s\n", prtconfig->net_config.wifi_ssid);
+            printf("Using Wi-Fi password: %s\n", prtconfig->net_config.wifi_pass);
         } else {
             printf("Wi-Fi mode: AP\n");
             // in AP mode we use hardcoded values for the SSID and password
-            strncpy(run_time_config.net_config.wifi_ssid, WIFI_AP_SSID, sizeof(run_time_config.net_config.wifi_ssid));
-            strncpy(run_time_config.net_config.wifi_pass, WIFI_AP_PASS, sizeof(run_time_config.net_config.wifi_pass));
+            strncpy(prtconfig->net_config.wifi_ssid, WIFI_AP_SSID, sizeof(prtconfig->net_config.wifi_ssid));
+            strncpy(prtconfig->net_config.wifi_pass, WIFI_AP_PASS, sizeof(prtconfig->net_config.wifi_pass));
         }
     }
 
@@ -276,9 +453,9 @@ int main()
     // start switching on the LED        
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, led_on);
 
-    if(run_time_config.net_config.wifi_mode == WLT_WIFI_MODE_AP) {
+    if(prtconfig->net_config.wifi_mode == WLT_WIFI_MODE_AP) {
         // Enable wifi access point
-        cyw43_arch_enable_ap_mode(run_time_config.net_config.wifi_ssid, run_time_config.net_config.wifi_pass,CYW43_AUTH_WPA2_AES_PSK);
+        cyw43_arch_enable_ap_mode(prtconfig->net_config.wifi_ssid, prtconfig->net_config.wifi_pass,CYW43_AUTH_WPA2_AES_PSK);
 
         wls_server.ip_addr.addr = PP_HTONL(CYW43_DEFAULT_IP_AP_ADDRESS);
         wls_server.ip_mask.addr = PP_HTONL(CYW43_DEFAULT_IP_MASK);
@@ -295,16 +472,16 @@ int main()
         cyw43_arch_enable_sta_mode();
 
         printf("Connecting to Wi-Fi...\n");
-        if (cyw43_arch_wifi_connect_timeout_ms(run_time_config.net_config.wifi_ssid, run_time_config.net_config.wifi_pass, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+        if (cyw43_arch_wifi_connect_timeout_ms(prtconfig->net_config.wifi_ssid, prtconfig->net_config.wifi_pass, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
             printf("failed to connect.\n");
             // TODO: Add a retry mechanism
             // or swith to AP mode; blink the LED to indicate the error?
             return -1;
         } else {
             printf("Connected.\n");
-            run_time_config.net_config.ipaddr = cyw43_state.netif[0].ip_addr.addr;
-            run_time_config.net_config.ipmask = cyw43_state.netif[0].netmask.addr; 
-            run_time_config.net_config.gwaddr = cyw43_state.netif[0].gw.addr;
+            prtconfig->net_config.ipaddr = cyw43_state.netif[0].ip_addr.addr;
+            prtconfig->net_config.ipmask = cyw43_state.netif[0].netmask.addr; 
+            prtconfig->net_config.gwaddr = cyw43_state.netif[0].gw.addr;
             // Set the wls_server ip_addr and ip_mask
             wls_server.ip_addr.addr = cyw43_state.netif[0].ip_addr.addr;
             wls_server.ip_mask.addr = cyw43_state.netif[0].netmask.addr;
@@ -313,9 +490,9 @@ int main()
             printf("IP address (wls_server) 0x%X\n", wls_server.ip_addr.addr);
 #endif // DEBUG
             // Read the ip address in a human readable way
-            printf("IP address %s\n",ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.ipaddr)));
-            printf("IP mask %s\n", ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.ipmask)));
-            printf("Gateway %s\n", ipaddr_ntoa((ip4_addr_t *)&(pconfig->net_config.gwaddr)));
+            printf("IP address %s\n",ipaddr_ntoa((ip4_addr_t *)&(prtconfig->net_config.ipaddr)));
+            printf("IP mask %s\n", ipaddr_ntoa((ip4_addr_t *)&(prtconfig->net_config.ipmask)));
+            printf("Gateway %s\n", ipaddr_ntoa((ip4_addr_t *)&(prtconfig->net_config.gwaddr)));
         }
     }
 
@@ -329,7 +506,7 @@ int main()
     wls_server.state->complete = false;
     wls_server.state->gw.addr = wls_server.ip_addr.addr;
 
-    if (!tcp_server_open(wls_server.state, run_time_config.net_config.wifi_ssid)) {
+    if (!tcp_server_open(wls_server.state, prtconfig->net_config.wifi_ssid)) {
         printf("Failed to open server\n");
         return -1;
     }
@@ -346,24 +523,24 @@ int main()
 
 //        printf("Waiting for work...\n");
         tick = time_us_64();
-        if ((tick - pre_tick) > run_time_config.data.settings.options.poll_time * 1000000) {
+        if ((tick - pre_tick) > prtconfig->data.settings.options.poll_time * 1000000) {
             // If more than poll_time second has passed, we can read the sensor data
             printf("Reading sensor data after %llu microseconds\n", (tick - pre_tick));
             // read the sensor data and update the DB
-            if (run_time_config.data.settings.options.sens_avail == SENS_AVAILABLE) {
-                if (DHT20_read_data(&run_time_config.data.temperature, &run_time_config.data.humidity) != 0) {
+            if (prtconfig->data.settings.options.sens_avail == SENS_AVAILABLE) {
+                if (DHT20_read_data(&(prtconfig->data.temperature), &(prtconfig->data.humidity)) != 0) {
                     printf("Failed to read DHT20 sensor data\n");
-                    run_time_config.data.settings.options.data_valid = SENS_DATA_NOT_VALID; // Data not valid
+                    prtconfig->data.settings.options.data_valid = SENS_DATA_NOT_VALID; // Data not valid
                 } else {
                     printf("DHT20 sensor data read successfully: Temperature = %.2f, Humidity = %.2f\n", 
-                           run_time_config.data.temperature,
-                           run_time_config.data.humidity);
-                    run_time_config.data.settings.options.data_valid = SENS_DATA_VALID; // Data valid
+                           prtconfig->data.temperature,
+                           prtconfig->data.humidity);
+                    prtconfig->data.settings.options.data_valid = SENS_DATA_VALID; // Data valid
                     // Send the data to UART
-                    wlt_send_to_uart(run_time_config.data.temperature,
-                                     run_time_config.data.humidity,
-                                     run_time_config.data.settings.options.t_format,
-                                     run_time_config.data.settings.options.out_format);
+                    wlt_send_to_uart(prtconfig->data.temperature,
+                                     prtconfig->data.humidity,
+                                     prtconfig->data.settings.options.t_format,
+                                     prtconfig->data.settings.options.out_format);
                 }
             } else {
                 printf("Sensor not available, using default values\n");

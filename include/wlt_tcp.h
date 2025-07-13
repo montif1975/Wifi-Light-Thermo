@@ -169,7 +169,7 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 #define SETTINGS_REPLY_FORM_WIFI            "<label for=\"ssid\">SSID</label>\
 <input type=\"text\" id=\"ssid\" name=\"ssid\" value=\"%s\">\
 <label for=\"pwd\">Password</label>\
-<input type=\"password\" id=\"pwd\" name=\"pwd\" value=\"***\">\
+<input type=\"password\" id=\"pwd\" name=\"pwd\" value=\"%s\">\
 <label for=\"devname\">Device Name</label>\
 <input type=\"text\" id=\"devname\" name=\"devname\" value=\"%s\">\
 <h3>Sensor config</h3>\

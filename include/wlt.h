@@ -4,12 +4,20 @@
 #include "pico/cyw43_arch.h"
 #include "wlt_tcp.h"
 #include "general.h"
+#include "eeprom_24LC256.h"
+
+#define WIFI_SSID_MAX_LEN                   32
+#define WIFI_PASS_MAX_LEN                   64
+#define WIFI_PASS_MIN_LEN                   8
+#define WIFI_PASS_HIDDEN                    "********"
+#define WIFI_PASS_VALID                     1
+#define WIFI_PASS_INVALID                   0
+#define WIFI_PASS_NOT_CHANGE                -1
+
+#define WIFI_DEVICENAME_MAX_LEN             32
 
 #define WIFI_AP_SSID                        "PICOW-WIFI"
 #define WIFI_AP_PASS                        "PicoWifiPass"
-
-#define WIFI_SSID                           "SSID"  
-#define WIFI_PASS                           "12345678"
 
 #define WIFI_DEFAULT_DEVICENAME             "WiFi Sensor"
 
@@ -27,12 +35,12 @@ typedef enum wlt_error{
 } wlt_error_t;
 
 typedef struct wlt_net_config {
-    uint8_t devicename[32];
+    uint8_t devicename[WIFI_DEVICENAME_MAX_LEN];
     uint8_t wifi_mode;
     uint8_t wifi_option; // reserved for future use
     uint8_t reserved[2]; // reserved for future use
-    uint8_t wifi_ssid[32];
-    uint8_t wifi_pass[64];
+    uint8_t wifi_ssid[WIFI_SSID_MAX_LEN];
+    uint8_t wifi_pass[WIFI_PASS_MAX_LEN];
     u32_t ipaddr;
     u32_t ipmask;
     u32_t gwaddr;
@@ -90,7 +98,7 @@ typedef struct thresholds {
 typedef struct wlt_data {
     float           temperature;
     float           humidity;
-    float           pressure;
+    float           pressure; // for future use, not available with DHT20 sensor
     settings_t      settings;
     thresholds_t    thresholds;
 } wlt_data_t;
@@ -99,6 +107,15 @@ typedef struct wlt_run_time_config {
     wlt_net_config_t net_config;
     wlt_data_t data;
 } wlt_run_time_config_t;
+
+typedef struct wlt_config_data {
+    char            signature[EEPROM_CTRL_WORD_LEN];
+    uint8_t         devicename[WIFI_DEVICENAME_MAX_LEN];
+    uint8_t         wifi_ssid[WIFI_SSID_MAX_LEN];
+    uint8_t         wifi_pass[WIFI_PASS_MAX_LEN];
+    settings_t      settings;
+    thresholds_t    thresholds;
+} wlt_config_data_t;
 
 typedef struct wlt_server {
     TCP_SERVER_T *state;
