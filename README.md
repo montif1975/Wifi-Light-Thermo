@@ -25,6 +25,8 @@ Sensor readings are always available, but configuration is only possible when th
 
 ## Hardware configuration
 
+In the project I used the Raspberry Pi Pico W with RP2040 microcontroller and Infineon Wifi and Bluetooth chip, see the device datasheet as reference.
+
 The sensor is connected to the I2C channel 0 using:
 - SDA on GPIO 8
 - SCL on GPIO 9
@@ -81,7 +83,9 @@ Simple web pages use a style sheet that can be easily modified to change the loo
 
 ## API interface
 
-The device also implements an API endpoints. 
+The device also implements an API endpoints.
+
+TODO
 
 
 ## Serial interface
