@@ -71,7 +71,7 @@ In Station mode (STA), the response is:
 ![settings](/resources/settings_sta.jpg "settings web page response in STA mode")
 
 
-The advanced configuration page is not ready yet, but the response, now, is like this:
+The advanced configuration page /advparams is not ready yet, but the response, now, is like this:
 ![advparams](/resources/advparams_ap.jpg "settings web page response")
 
 
@@ -86,6 +86,14 @@ The device also implements an API endpoints.
 
 ## Serial interface
 
-ff
+To view the serial output of the device it's enough to connect the UART's PIN to an UART-to-USB converter (TX of the device on RX of the converter): the ouput will be available on a terminal console on the PC.
+
+Be careful to use a 3.3V converter!
+
+I use AZ-Delivery FT232RL with putty on Window 11 PC and it works.
+
+Here the output of the UART interface (in this case in CSV format *Temperature;Humidity*)
+![wlt in action](/resources/serial_output.jpg "the CSV format out log")
+
 
 
