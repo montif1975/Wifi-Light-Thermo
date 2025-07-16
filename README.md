@@ -49,7 +49,7 @@ Obviously all the connections and PINs used can be modified by acting on the def
 
 ## Web interface
 
-The simple web server implemented in the device serve this pages:
+The simple web server implemented in the device serves this pages:
 
 | Page              | Available in AP mode | Avilable in STA mode |
 |-------------------|----------------------|----------------------|
@@ -57,14 +57,13 @@ The simple web server implemented in the device serve this pages:
 | /settings         |           YES        |        NO            |
 | /advparams        |           YES        |        NO            |
 
-There are other pages to set the thresholds but are not implemented yet.
+There are other pages to set the thresholds but they are not implemented yet.
 
-The reply to /info request is the following:
+The response to /info request is the following:
 ![info](/resources/info.jpg "info web page response")
 
-The reply to /settings page depends on the wifi mode; in AP mode the response is:
+The response to /settings page depends on the wifi mode; in AP mode the response is:
 ![settings](/resources/settings_ap.jpg "settings web page response in AP mode")
-
 
 In Station mode (STA), the response is:
 ![settings](/resources/settings_sta.jpg "settings web page response in STA mode")
