@@ -26,21 +26,46 @@ Sensor readings are always available, but configuration is only possible when th
 The sensor is connected to the I2C channel 0 using:
 - SDA on GPIO 8
 - SCL on GPIO 9
+
 The EEPROM flash memory is connected to the I2C channel 1 using:
 - SDA on GPIO 14
 - SCL on GPIO 15
+
 The UART0 is used to transmitt the measured values; the pin used are:
 - UART TX on GPIO 0
 - UART RX on GPIO 1
+
 The GPIO22 is used to setup the wifi mode according to these values:
 - if GPIO 22 is high the device works in Station Mode (it needs to have a valid SSID and password to connect to the wifi network).
 - if GPIO 22 is low the device works in Access Point Mode.
+
 In Access Point Mode, the default network SSID is "PICOW-WIFI" and the password is "PicoWifiPass".
 The default IP address of the device is 192.168.8.1 and it acts as DHCP server for up to 4 clients.
 
 ## Web interface
 
-dd
+The simple web server implemented in the device serve this pages:
+
+| Page              | Available in AP mode | Avilable in STA mode |
+|-------------------|----------------------|----------------------|
+| /info             |           YES        |        YES           |
+| /settings         |           YES        |        NO            |
+| /advparams        |           YES        |        NO            |
+
+There are other pages to set the thresholds but are not implemented yet.
+
+The reply to /info request is the following:
+![info](/resources/info.jpg "info web page response")
+
+The reply to /settings page depends on the wifi mode; in AP mode the response is:
+![settings](/resources/settings_ap.jpg "settings web page response in AP mode")
+
+In Station mode (STA), the response is:
+![settings](/resources/settings_sta.jpg "settings web page response in STA mode")
+
+The advanced configuration page is not ready yet, but the response, now, is like this:
+![advparams](/resources/advparams_ap.jpg "settings web page response")
+
 
 ## API interface
 
