@@ -1,6 +1,6 @@
 # WiFi Light Thermo (wlt)
 
-NOTE: This project is based on the Raspberry PICO example [tcp_server] (https://github.com/raspberrypi/pico-examples/blob/master/pico_w/wifi/tcp_server/).
+NOTE: This project is based on the Raspberry PICO example [tcp_server](https://github.com/raspberrypi/pico-examples/blob/master/pico_w/wifi/tcp_server/).
 
 WiFi Light Thermo, implements a WiFi-enabled thermostat that measures temperature and humidity. The measured values can be accessed via a web server interface—either through a simple formatted web page, an API endpoint, or a serial log.
 
@@ -23,19 +23,29 @@ Sensor readings are always available, but configuration is only possible when th
 
 ## Hardware configuration
 
-fff
-
-## Connections
-
-kk
-
-## How to works
-
-ff
+The sensor is connected to the I2C channel 0 using:
+- SDA on GPIO 8
+- SCL on GPIO 9
+The EEPROM flash memory is connected to the I2C channel 1 using:
+- SDA on GPIO 14
+- SCL on GPIO 15
+The UART0 is used to transmitt the measured values; the pin used are:
+- UART TX on GPIO 0
+- UART RX on GPIO 1
+The GPIO22 is used to setup the wifi mode according to these values:
+- if GPIO 22 is high the device works in Station Mode (it needs to have a valid SSID and password to connect to the wifi network).
+- if GPIO 22 is low the device works in Access Point Mode.
+In Access Point Mode, the default network SSID is "PICOW-WIFI" and the password is "PicoWifiPass".
+The default IP address of the device is 192.168.8.1 and it acts as DHCP server for up to 4 clients.
 
 ## Web interface
 
 dd
+
+## API interface
+
+ff
+
 
 ## Serial interface
 
