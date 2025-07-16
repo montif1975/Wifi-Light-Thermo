@@ -6,6 +6,8 @@ WiFi Light Thermo, implements a WiFi-enabled thermostat that measures temperatur
 
 The device allows configuration of several parameters, including:
 
+- The device name
+
 - Temperature unit: °C or °F
 
 - Output format: TXT or CSV
@@ -42,6 +44,9 @@ The GPIO22 is used to setup the wifi mode according to these values:
 In Access Point Mode, the default network SSID is "PICOW-WIFI" and the password is "PicoWifiPass".
 The default IP address of the device is 192.168.8.1 and it acts as DHCP server for up to 4 clients.
 
+Obviously all the connections and PINs used can be modified by acting on the defines present in the code.
+
+
 ## Web interface
 
 The simple web server implemented in the device serve this pages:
@@ -60,16 +65,21 @@ The reply to /info request is the following:
 The reply to /settings page depends on the wifi mode; in AP mode the response is:
 ![settings](/resources/settings_ap.jpg "settings web page response in AP mode")
 
+
 In Station mode (STA), the response is:
 ![settings](/resources/settings_sta.jpg "settings web page response in STA mode")
+
 
 The advanced configuration page is not ready yet, but the response, now, is like this:
 ![advparams](/resources/advparams_ap.jpg "settings web page response")
 
+NOTE: at the moment the form use the GET method.
+
+Simple web pages use a style sheet that can be easily modified to change the look of the pages.
 
 ## API interface
 
-ff
+The device also implements an API endpoints. 
 
 
 ## Serial interface
