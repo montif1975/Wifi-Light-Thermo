@@ -62,8 +62,10 @@ There are other pages to set the thresholds but they are not implemented yet.
 The response to /info request is the following:
 ![info](/resources/info.jpg "info web page response")
 
+
 The response to /settings page depends on the wifi mode; in AP mode the response is:
 ![settings](/resources/settings_ap.jpg "settings web page response in AP mode")
+
 
 In Station mode (STA), the response is:
 ![settings](/resources/settings_sta.jpg "settings web page response in STA mode")
@@ -71,6 +73,7 @@ In Station mode (STA), the response is:
 
 The advanced configuration page is not ready yet, but the response, now, is like this:
 ![advparams](/resources/advparams_ap.jpg "settings web page response")
+
 
 NOTE: at the moment the form use the GET method.
 
