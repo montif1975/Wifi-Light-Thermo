@@ -110,6 +110,10 @@ static int build_req_settings_form(char *result, size_t max_result_len)
         printf("prtconfig is NULL\n");
         return 0; // Error
     }
+    if (pconfig == NULL) {
+        printf("pconfig is NULL\n");
+        return 0; // Error
+    }
 
     len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_HEAD);        
     if ((len2copy > 0) && (len2copy < max_result_len)) {
@@ -119,10 +123,12 @@ static int build_req_settings_form(char *result, size_t max_result_len)
         return 0; // Error
     }   
     // copy the wifi form
+    // we show the wifi SSID used in Station mode, the password is left blank
+    // to avoid security issues, the device name is shown as well
     len2copy = snprintf(result + len,
                         max_result_len - len,
                         SETTINGS_REPLY_FORM_WIFI,
-                        prtconfig->net_config.wifi_ssid,
+                        pconfig->wifi_ssid,
                         WIFI_PASS_HIDDEN,
                         prtconfig->net_config.devicename);
     if ((len2copy > 0) && (len2copy < (max_result_len - len))) {
@@ -235,10 +241,15 @@ static int build_req_adv_settings_form(char *result, size_t max_result_len)
  */
 static int check_wifi_password(const char *password)
 {
+    int ret = WIFI_PASS_VALID;
+
     if (password != NULL) {
-        // Check if the password is valid (not empty and not too long or too short)
+        if(strlen(password) == 0) {
+            return WIFI_PASS_NOT_CHANGE; // Password not provided, not changed
+        }
+        // if password is not empty, check if the password is valid (not too long or too short)
         // and not containing special characters
-        if (password == NULL || strlen(password) < WIFI_PASS_MIN_LEN || strlen(password) > WIFI_PASS_MAX_LEN) {
+        if (strlen(password) < WIFI_PASS_MIN_LEN || strlen(password) > WIFI_PASS_MAX_LEN) {
             return WIFI_PASS_INVALID; // Invalid password
         }
         for (const char *c = password; *c != '\0'; c++) {
@@ -246,14 +257,13 @@ static int check_wifi_password(const char *password)
                 return WIFI_PASS_INVALID; // Invalid password
             }
         }
-        if(strstr(password, WIFI_PASS_HIDDEN) != NULL) {
-            return WIFI_PASS_NOT_CHANGE; // Password should not contain the hidden placeholder
-        }
     }
     else {
         // If the password is NULL, it means it's not changed
         return WIFI_PASS_NOT_CHANGE;
     }
+
+    return ret;
 }
 
 /*
@@ -473,7 +483,14 @@ static int fill_server_content(const char *request, const char *params, char *re
                         }
                         param = strtok(NULL, "&");
                     }
-
+#if 1 //DEBUG
+                    printf("Parsed parameters: ssid=%s, pwd=%s, devname=%s, scale=%s, oform=%s\n", 
+                           ssid ? ssid : "NULL", 
+                           pwd ? pwd : "NULL", 
+                           devname ? devname : "NULL", 
+                           scale ? scale : "NULL", 
+                           oform ? oform : "NULL");
+#endif
                     // Update the configuration
                     if (ssid && pwd && devname && scale && oform) {
                         int ret;
@@ -486,6 +503,8 @@ static int fill_server_content(const char *request, const char *params, char *re
                             len = snprintf(result, max_result_len, SETTINGS_SAVE_NACK_EINVAL);
                             return len; // Error
                         } else if (ret == WIFI_PASS_VALID) {
+                            printf("Wi-Fi password changed (new password=%s)\n",pwd);
+                            // Copy the password, ensuring we don't overflow
                             strncpy((char *)prtconfig->net_config.wifi_pass, pwd, sizeof(prtconfig->net_config.wifi_pass) - 1);
                         }
                         // when use method GET, if the original devicename contains spaces, they are replaced with '%20' or '+' in the URL,

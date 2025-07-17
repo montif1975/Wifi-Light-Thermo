@@ -163,7 +163,7 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 <div class=\"form-container\">\
 <h2>Wifi Sensor Configuration</h2>\
 <form action=\"/setparams\" method=\"get\">\
-<h3>Wifi config</h3>\
+<h3>Wifi config (STA mode)</h3>\
 <hr>"
 
 #define SETTINGS_REPLY_FORM_WIFI            "<label for=\"ssid\">SSID</label>\

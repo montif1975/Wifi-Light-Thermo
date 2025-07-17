@@ -14,20 +14,20 @@ The device allows configuration of several parameters, including:
 
 - Sensor polling interval
 
-- Temperature and humidity thresholds to activate or deactivate predefined outputs
+- Temperature and humidity thresholds to activate or deactivate predefined outputs (not completely developed yet).
 
 You can also set the SSID and password to connect the device to a desired WiFi network.
-All configuration settings are stored in EEPROM memory connected via the I2C bus.
+All configuration settings are stored in EEPROM memory connected via the I2C bus: I use a memory add-on available in my project [addon_eeprom_i2c](https://github.com/montif1975/addon_eeprom_i2c).
 
-The device's WiFi mode—Access Point (AP) or Station (STA)—is selected based on the state of a predefined GPIO pin (default: GPIO 22).
+The device's WiFi mode — Access Point (AP) or Station (STA) — is selected based on the state of a predefined GPIO pin (default: GPIO 22).
 
 Sensor readings are always available, but configuration is only possible when the device is operating in Access Point mode.
 
 ## Hardware configuration
 
-In the project I used the Raspberry Pi Pico W with RP2040 microcontroller and Infineon Wifi and Bluetooth chip, see the device datasheet as reference.
+In the project I used the Raspberry Pi Pico W with RP2040 microcontroller and Infineon CYW43439 Wifi and Bluetooth chip, see the device datasheet as reference.
 
-The sensor is connected to the I2C channel 0 using:
+The temperature sensor is connected to the I2C channel 0 using:
 - SDA on GPIO 8
 - SCL on GPIO 9
 
@@ -84,8 +84,26 @@ Simple web pages use a style sheet that can be easily modified to change the loo
 ## API interface
 
 The device also implements an API endpoints.
+The implementation is in progess. The table below show the API planned and the staus of implementation.
 
-TODO
+
+| API request           |   Method  | Implemented |
+|-----------------------|-----------|-------------|
+| /api/v1/info          |    GET    |   YES       |
+| /api/v1/settings      |    GET    |   YES       |
+| /api/v1/setparams     |    N/A    |   NOT YET   |
+| /api/v1/setadvparams  |    N/A    |   NOT YET   |
+| /api/v1/sethightemp   |    N/A    |   NOT YET   |
+| /api/v1/setlowtemp    |    N/A    |   NOT YET   |
+| /api/v1/sethighhum    |    N/A    |   NOT YET   |
+| /api/v1/setlowhum     |    N/A    |   NOT YET   |
+
+
+Here an example of the response to API request /api/v1/info
+![api info](/resources/info_api.jpg "API info response")
+
+Here an example of the response to API request /api/v1/settings
+![api settings](/resources/settings_api.jpg "API settings response")
 
 
 ## Serial interface

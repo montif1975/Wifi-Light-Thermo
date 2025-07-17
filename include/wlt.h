@@ -9,7 +9,7 @@
 #define WIFI_SSID_MAX_LEN                   32
 #define WIFI_PASS_MAX_LEN                   64
 #define WIFI_PASS_MIN_LEN                   8
-#define WIFI_PASS_HIDDEN                    "********"
+#define WIFI_PASS_HIDDEN                    ""
 #define WIFI_PASS_VALID                     1
 #define WIFI_PASS_INVALID                   0
 #define WIFI_PASS_NOT_CHANGE                -1
