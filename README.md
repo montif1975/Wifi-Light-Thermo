@@ -84,7 +84,8 @@ Simple web pages use a style sheet that can be easily modified to change the loo
 ## API interface
 
 The device also implements an API endpoints.
-The implementation is in progess. The table below show the API planned and the staus of implementation.
+The implementation is in progess.
+The table below show the API planned and the staus of implementation.
 
 
 | API request           |   Method  | Implemented |
