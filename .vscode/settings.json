@@ -41,6 +41,7 @@
         "stdlib.h": "c",
         "fstream": "c",
         "sstream": "c",
-        "general.h": "c"
+        "general.h": "c",
+        "cstdio": "c"
     }
 }

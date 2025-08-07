@@ -5,6 +5,7 @@
 #include "wlt_tcp.h"
 #include "general.h"
 #include "eeprom_24LC256.h"
+#include "rgb.h"
 
 #define WIFI_SSID_MAX_LEN                   32
 #define WIFI_PASS_MAX_LEN                   64
@@ -22,6 +23,14 @@
 #define WIFI_DEFAULT_DEVICENAME             "WiFi Sensor"
 
 #define GPIO_SELECT_WIFI_MODE               22
+
+#define RGB_LED_ON_BOOT                     RGB_COLOR_RED
+#define RGB_LED_ON_FAIL                     (RGB_COLOR_RED | RGB_BLINK_OPT)
+#define RGB_LED_ON_STA_MODE                 (RGB_COLOR_GREEN | RGB_BLINK_OPT)
+#define RGB_LED_ON_AP_MODE                  (RGB_COLOR_BLUE | RGB_BLINK_OPT)
+#define RGB_LED_ON_WIFI_FAIL                RGB_COLOR_YELLOW
+#define RGB_LED_ON_TIME_MS                  1000 // LED on time in milliseconds
+#define RGB_LED_OFF_TIME_MS                 1000 // LED off time in milliseconds
 
 typedef enum wlt_wifi_mode {
     WLT_WIFI_MODE_STA = 0,
@@ -75,7 +84,7 @@ typedef union settings {
 enum trd_trigger {
     TRD_TRIGGER_NONE    = 0,     // No trigger
     TRD_TRIGGER_HIGH    = 1,     // Trigger when value is up the threshold
-    TRD_TRIGGER_LOW     = 2,      // Trigger when value is below the threshold
+    TRD_TRIGGER_LOW     = 2,     // Trigger when value is below the threshold
     TRD_TRIGGER_BOTH    = 3      // Trigger when value is up and below the threshold
 };
 
@@ -122,5 +131,12 @@ typedef struct wlt_server {
     ip_addr_t ip_addr;
     ip_addr_t ip_mask;
 } wls_server_t;
+
+typedef struct wlt_rgb_led {
+    int color; // Current color of the RGB LED
+    int blink; // Blink option for the RGB LED
+    bool is_on; // LED state: true (1) = on, false (0) = off
+    uint64_t last_change; // Last time the LED color was changed
+} wlt_rgb_led_t;
 
 #endif // WLT_H

@@ -17,6 +17,7 @@
 #include "include/dht20.h"
 #include "include/uart.h"
 #include "include/eeprom_24LC256.h"
+#include "include/rgb.h"
 
 // global variables
 wlt_run_time_config_t *prtconfig;
@@ -359,6 +360,143 @@ wlt_error_t wlt_check_wifi_mode(wlt_run_time_config_t *config)
 }
 
 /*
+ * Function: wlt_set_led_color()
+ * Description: This function sets the LED color based on the index provided.
+*/
+void wlt_set_led_color(int index, wlt_rgb_led_t *led_state)
+{
+    int color;
+
+    if(led_state == NULL) {
+        // when the function is called with NULL, it means that the caller is error handling
+        // in this case, we don't need to update the led_state but only set the color
+        color = index & ~RGB_BLINK_OPT; // Remove the blink option bit
+        rgb_set_led_color(index);
+        return;
+    }
+
+    if((index & RGB_BLINK_OPT) == RGB_BLINK_OPT)
+    {
+        // If the index has the bit RGB_BLINK_OPT set, treat it as a blink option
+        color = index & ~RGB_BLINK_OPT; // Remove the blink option bit
+        led_state->blink = true; // Set the blink option
+    } else {
+        color = index;
+    }
+    if(color < 0 || color >= RGB_COLOR_MAX) {
+        printf("Invalid RGB color index: %d\n", color);
+        return;
+    }
+    led_state->color = color; // Set the current color
+#if DEBUG
+    printf("Setting LED color, index: %d\n", color);
+#endif
+    if(color != RGB_COLOR_OFF)
+        led_state->is_on = true; // Set the LED state to on
+    else
+        led_state->is_on = false; // Set the LED state to off
+    rgb_set_led_color(color);
+    led_state->last_change = time_us_64(); // Update the last change time
+
+    return;
+}
+
+/*
+* Function: wlt_update_rgb_led()
+ * Description: This function updates the LED color based on the current mode and the tick count.
+ * It checks if the LED should be turned on or off based on the tick count and the start tick count saved in the led_status structure.
+ * Parameters: config - pointer to the rgb led struct, tick - current tick count.
+ */
+void wlt_update_rgb_led(uint8_t mode, wlt_rgb_led_t *led_status, int64_t tick)
+{
+    int color = RGB_COLOR_OFF; // Default color is OFF
+    int64_t delta;
+
+    if (led_status == NULL) {
+        printf("Invalid argument: config is NULL\n");
+        return;
+    }
+
+    if (tick < led_status->last_change) {
+        delta = (UINT64_MAX - led_status->last_change) + tick; // Handle wrap-around case
+    } else {
+        delta = tick - led_status->last_change; // Normal case
+    }
+
+    // retrieve the current color and blink option
+    color = led_status->color;
+    if(color & RGB_BLINK_OPT == 0x0) {
+        // If the color has not the blink option, no need to update color
+        return;
+    }
+    else {
+        // check the led's status
+        if(led_status->is_on == false) {
+            // LED is off, check if the timer has expired
+            if (delta < (RGB_LED_OFF_TIME_MS * 1000)) {
+                // Timer has not expired, do not change the LED color
+                return;
+            } else {
+                // Timer has expired, turn on the LED checking which color to set
+                // according to the current mode (I can't use the color stored in led_status
+                // because it is the OFF color when the LED is off)
+                if(mode == WLT_WIFI_MODE_STA) {
+                    color = RGB_LED_ON_STA_MODE;
+                } else if (mode == WLT_WIFI_MODE_AP) {
+                    color = RGB_LED_ON_AP_MODE;
+                } else {
+                    color = RGB_LED_ON_FAIL; // Default to red if mode is unknown
+                }
+                printf("Timeout led = %.02f [s] - Led was OFF, switch on to color %d\n", (float)(delta/1000000), (color & ~RGB_BLINK_OPT));
+                wlt_set_led_color(color, led_status); // Turn on the LED
+            }
+        }
+        else {
+            // LED is on, check if the timer has expired
+            if (delta < (RGB_LED_ON_TIME_MS * 1000)) {
+                // Timer has not expired, do not change the LED color
+                return;
+            } else {
+                // Timer has expired, turn off the LED
+                printf("Timeout led = %.02f [s] - Led was ON with color %d, switch OFF\n", (float)(delta/1000000), led_status->color);
+                wlt_set_led_color(RGB_COLOR_OFF, led_status); // Turn off the LED
+            }
+        }
+    }
+
+    return;
+}
+
+/*
+* Function: wlt_goto_error()
+ * Description: This function sets the RGB LED to red with blink option and enters an infinite loop to indicate an error state.
+ * It does not return any value.
+*/
+void wlt_goto_error(int led_color)
+{
+    int color = led_color & ~RGB_BLINK_OPT; // Remove the blink option bit
+    int do_blink = (led_color & RGB_BLINK_OPT) ? 1 : 0;
+
+    if(do_blink) {
+        while (1) {
+            // Set the RGB LED to color
+            wlt_set_led_color(color, NULL);
+            sleep_ms(RGB_LED_ON_TIME_MS);
+            wlt_set_led_color(RGB_COLOR_OFF, NULL);
+            sleep_ms(RGB_LED_OFF_TIME_MS);
+        }
+    } else {
+        // Just set the LED to the color without blinking
+        wlt_set_led_color(color, NULL);
+        while (1) {
+            sleep_ms(1000);
+        }
+    }
+    
+    return;
+}
+
+/*
 *   Main function
 */
 int main()
@@ -366,6 +504,7 @@ int main()
     int ret;
     wlt_run_time_config_t run_time_config;
     wlt_config_data_t config;
+    wlt_rgb_led_t rgb_led;
     dhcp_server_t dhcp_server;
     dns_server_t dns_server;
     wls_server_t wls_server;
@@ -383,6 +522,10 @@ int main()
     i2c_eeprom_init();
     wlt_init_port_sensor();
     wlt_init_uart();
+    rgb_init();
+
+    // switch on the RGB LED
+    wlt_set_led_color(RGB_LED_ON_BOOT,&rgb_led); // Set the LED color on boot
 
     // search config reading from memory
     ret = 0;
@@ -391,14 +534,13 @@ int main()
     memset(&config, 0x0, sizeof(config));
     if (wlt_read_config((BYTE *)&config, sizeof(config)) != EE_SUCCESS) {
         printf("*** ERROR ****\nUnable to read EEPROM (I2C) Memory\n");
-        ret = -1;
-    }
-    else {
+        wlt_goto_error(RGB_LED_ON_FAIL);
+    } else {
         printf("Config data CTRL WORD: %s\n", (char *)&config.signature);
         // check if the configuration read is valid
         if (wlt_check_config((char *)pconfig->signature, sizeof(config.signature)) != EE_SUCCESS) {
             printf("*** ERROR ****\nInvalid configuration read from EEPROM (I2C) Memory\n");
-            ret = -1;
+            wlt_goto_error(RGB_LED_ON_FAIL);
         } else {
             printf("Configuration read successfully from EEPROM\n");
             // configuration read successfully, initialize the runtime configuration loading data from EEPROM
@@ -411,6 +553,7 @@ int main()
         // save the default configuration to EEPROM
         if (wlt_write_config((BYTE *)&config, sizeof(config)) != EE_SUCCESS) {
             printf("*** ERROR ****\nUnable to write EEPROM (I2C) Memory\n");
+            wlt_goto_error(RGB_LED_ON_FAIL);
         } else {
             printf("Default configuration written to EEPROM\n");
         }
@@ -431,7 +574,7 @@ int main()
     ret = wlt_check_wifi_mode(prtconfig);
     if (ret != WLT_SUCCESS) {
         printf("failed to check the wifi mode\n");
-        return -1;
+        wlt_goto_error(RGB_LED_ON_FAIL);
     } else {
         if(prtconfig->net_config.wifi_mode == WLT_WIFI_MODE_STA) {
             printf("Wi-Fi mode: STA\n");
@@ -448,12 +591,14 @@ int main()
     // Initialise the Wi-Fi chip
     if (cyw43_arch_init()) {
         printf("Wi-Fi init failed\n");
-        return -1;
+        wlt_goto_error(RGB_LED_ON_WIFI_FAIL);
     }
     // start switching on the LED        
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, led_on);
 
     if(prtconfig->net_config.wifi_mode == WLT_WIFI_MODE_AP) {
+        wlt_set_led_color(RGB_LED_ON_AP_MODE, &rgb_led); // Set the LED color for AP mode
+
         // Enable wifi access point
         cyw43_arch_enable_ap_mode(prtconfig->net_config.wifi_ssid, prtconfig->net_config.wifi_pass,CYW43_AUTH_WPA2_AES_PSK);
 
@@ -468,6 +613,8 @@ int main()
         dns_server_init(&dns_server, &wls_server.ip_addr);
 #endif // START_DNS_SERVER
     } else {
+        wlt_set_led_color(RGB_LED_ON_STA_MODE, &rgb_led); // Set the LED color for STA mode
+
         // Enable wifi station
         cyw43_arch_enable_sta_mode();
 
@@ -476,7 +623,7 @@ int main()
             printf("failed to connect.\n");
             // TODO: Add a retry mechanism
             // or swith to AP mode; blink the LED to indicate the error?
-            return -1;
+            wlt_goto_error(RGB_LED_ON_WIFI_FAIL);
         } else {
             printf("Connected.\n");
             prtconfig->net_config.ipaddr = cyw43_state.netif[0].ip_addr.addr;
@@ -500,7 +647,7 @@ int main()
     wls_server.state = (TCP_SERVER_T *)calloc(1, sizeof(TCP_SERVER_T));
     if (!wls_server.state) {
         printf("Fatal error: failed to allocate wls_server.state\n");
-        return -1;
+        wlt_goto_error(RGB_LED_ON_FAIL);
     }
     wls_server.state->server_pcb = NULL;
     wls_server.state->complete = false;
@@ -508,7 +655,7 @@ int main()
 
     if (!tcp_server_open(wls_server.state, prtconfig->net_config.wifi_ssid)) {
         printf("Failed to open server\n");
-        return -1;
+        wlt_goto_error(RGB_LED_ON_FAIL);
     }
     printf("Server opened successfully\n");
 
@@ -523,6 +670,9 @@ int main()
 
 //        printf("Waiting for work...\n");
         tick = time_us_64();
+        // Update the LED color based on the current mode
+        wlt_update_rgb_led(prtconfig->net_config.wifi_mode, &rgb_led, tick);
+
         if ((tick - pre_tick) > prtconfig->data.settings.options.poll_time * 1000000) {
             // If more than poll_time second has passed, we can read the sensor data
             printf("Reading sensor data after %llu microseconds\n", (tick - pre_tick));
