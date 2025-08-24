@@ -21,6 +21,17 @@ All configuration settings are stored in EEPROM memory connected via the I2C bus
 
 The device's WiFi mode — Access Point (AP) or Station (STA) — is selected based on the state of a predefined GPIO pin (default: GPIO 22).
 
+To know the working status of the device, I added a RGB led that shows these colors according to the status:
+
+| LED COLOR | Type   | Status of device |
+|---------- |--------|------------------|
+| RED       | SOLID  | BOOT IN PROGRESS |
+| RED       | BLINK  | GENERIC ERROR    |
+| GREEN     | BLINK  | RUN IN STA MODE  |
+| BLUE      | BLINK  | RUN IN AP MODE   |
+| YELLOW    | SOLID  | WIFI FAIL        |
+
+
 Sensor readings are always available, but configuration is only possible when the device is operating in Access Point mode.
 
 ## Hardware configuration
@@ -45,6 +56,14 @@ The GPIO22 is used to setup the wifi mode according to these values:
 
 In Access Point Mode, the default network SSID is "PICOW-WIFI" and the password is "PicoWifiPass".
 The default IP address of the device is 192.168.8.1 and it acts as DHCP server for up to 4 clients.
+
+The RGB LED is connected to the following GPIOs:
+- Led GREEN on GPIO 3
+- Led RED on GPIO 4
+- Led BLU on GPIO 5
+
+Depending on the LED used, it is necessary to add resistors between the LED and the Pico PIN to limit the current.
+I used the AZDelivery KY-009 RGB LED.
 
 Obviously all the connections and PINs used can be modified by acting on the defines present in the code.
 
