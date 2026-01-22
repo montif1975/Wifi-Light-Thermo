@@ -318,6 +318,7 @@ static int fill_server_content(const char *request, const char *params, char *re
     int len = 0;
     int len2copy = 0;
     int i = 0;
+    char treshold_trigger[5]; // Buffer for threshold trigger
 #if DEBUG
     printf("%s Request: %s?%s\n", __FUNCTION__, request, params);
     printf("max_result_len: %zu\n", max_result_len);
@@ -631,7 +632,6 @@ static int fill_server_content(const char *request, const char *params, char *re
                     break;
 
                 case HTTP_API_GET_SETTINGS:
-                    char treshold_trigger[5]; // Buffer for threshold trigger
                     // Generate API settings response
                     /*
                         {
