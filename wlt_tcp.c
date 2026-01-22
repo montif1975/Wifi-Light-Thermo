@@ -3,7 +3,7 @@
 #include "lwip/tcp.h"
 #include "include/wlt.h"
 #include "include/wlt_global.h"
-//#include "include/wlt_tcp.h"
+#include "json/ecjp.h"
 
 static char *http_req_page_str[HTTP_REQ_MAX] = {
     STYLE_URL,
@@ -33,6 +33,60 @@ static char *http_req_api_str[HTTP_API_MAX] = {
     API_SET_HIGH_HUM_URL, 
     API_SET_LOW_HUM_URL
 };
+
+
+/**
+ * Function: parse_settings_form()
+ * Description: This function parses the settings form data received from the client.
+ * Parameters:
+ * body - pointer to the body of the HTTP request
+ * content_length - length of the content
+ */
+void parse_settings_form(char *body, size_t content_length)
+{
+    ecjp_return_code_t ret;
+    ecjp_check_result_t results;
+    char *ptr;
+    ecjp_item_elem_t *item_list = NULL;
+    char key[ECJP_MAX_KEY_LEN];
+    char value[ECJP_MAX_KEY_VALUE_LEN];
+
+    printf("Len = %d - %s\n", content_length, body);
+
+    // Parse the form data using ecjp
+    ret = ecjp_check_and_load_2(body, &item_list, &results);
+    if (ret != ECJP_NO_ERROR) {
+        printf("Error parsing settings form data: %d\n", ret);
+        ecjp_free_item_list(&item_list);
+        return;
+    }
+    else {
+        printf("Settings form data parsed successfully\n");
+        while (item_list != NULL) {
+            printf("Item read successfully.\n");
+            printf("Type = %s, Value = %s\n", ecjp_type[item_list->item.type], (char *)item_list->item.value);
+            if (item_list->item.type == ECJP_TYPE_OBJECT) {
+//                parse_level_2((char *)item_list->item.value);
+            }
+
+            if (item_list->item.type == ECJP_TYPE_KEY_VALUE_PAIR) {
+                // parse key-value pair
+                memset(key, 0, sizeof(key));
+                memset(value, 0, sizeof(value));
+                // for MCUs without sscanf support, use library function
+                // TODO: there is a bug here, ecjp_split_key_and_value returns error when value contains ":"
+                if (ecjp_split_key_and_value(item_list, key, value, ECJP_BOOL_TRUE) != ECJP_NO_ERROR) {
+                    printf("Failed to split key-value pair.\n");
+                } else  {
+                    printf("Key = '%s', Value = '%s'\n", key, value);
+                }
+            }   
+            item_list = item_list->next;
+        }
+    }
+    ecjp_free_item_list(&item_list);
+    return;
+}
 
 /*
  * Function: tcp_close_client_connection()
@@ -1043,6 +1097,37 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
         }
         else if (strncmp(HTTP_POST, con_state->headers, sizeof(HTTP_POST) - 1) == 0) {
             // Handle POST request
+            char *content_length_ptr = strstr(p->payload, "Content-Length:");
+            if (content_length_ptr != NULL) {
+                // We have content length, so we can read the body
+                char *content_length_str = content_length_ptr + 15;
+                int content_length = atoi(content_length_str);
+                printf("Content-Length: %d\n", content_length);
+                // Here we would normally read the body and process it
+                // search /r/n/r/n to find the end of headers
+                char *body = strstr(p->payload, "\r\n\r\n");
+                if (body) {
+                    body += 4; // skip the \r\n\r\n
+                    int body_length = p->tot_len - (body - (char *)p->payload);
+                    printf("Body length: %d\n", body_length);
+                    if (body_length >= content_length) {
+                        // Null-terminate the body for safety
+                        body[content_length] = 0;
+                        // We have the full body
+                        printf("Body: %.*s\n", content_length, body);
+                        // Here we would process the body content
+                        parse_settings_form(body, content_length);
+                    } else {
+                        printf("Incomplete body received\n");
+                    }
+                } else {
+                    printf("No body found in POST request\n");
+                }
+            }
+            else {
+                printf("No Content-Length header found in POST request\n");
+            }
+#if 1
             char *request = con_state->headers + sizeof(HTTP_POST); // + space
             // send 501 Not Implemented Error
             con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_IMPL_ERROR);
@@ -1052,6 +1137,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                 pbuf_free(p);
                 return tcp_close_client_connection(con_state, pcb, err);
             }
+#endif
         }
         else {
             // Unsupported request, send 404 Not Found

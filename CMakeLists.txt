@@ -44,6 +44,7 @@ add_executable(wlt
     favicon_ico.c
     dhcpserver/dhcpserver.c
     dnsserver/dnsserver.c
+    json/ecjp.c
 )
 
 pico_set_program_name(wlt "wlt")
@@ -65,6 +66,7 @@ target_include_directories(wlt PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts
         ${CMAKE_CURRENT_LIST_DIR}/dhcpserver
         ${CMAKE_CURRENT_LIST_DIR}/dnsserver
+        ${CMAKE_CURRENT_LIST_DIR}/json
 )
 
 
