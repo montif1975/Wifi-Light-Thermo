@@ -5,6 +5,9 @@
 #include "include/wlt_global.h"
 #include "json/ecjp.h"
 
+extern wlt_error_t parse_settings_form(char *body, size_t content_length);
+
+
 static char *http_req_page_str[HTTP_REQ_MAX] = {
     STYLE_URL,
     STYLE_INFO_URL,
@@ -35,58 +38,28 @@ static char *http_req_api_str[HTTP_API_MAX] = {
 };
 
 
-/**
- * Function: parse_settings_form()
- * Description: This function parses the settings form data received from the client.
- * Parameters:
- * body - pointer to the body of the HTTP request
- * content_length - length of the content
- */
-void parse_settings_form(char *body, size_t content_length)
+enum http_req_page tcp_get_requested_page(const char *url)
 {
-    ecjp_return_code_t ret;
-    ecjp_check_result_t results;
-    char *ptr;
-    ecjp_item_elem_t *item_list = NULL;
-    char key[ECJP_MAX_KEY_LEN];
-    char value[ECJP_MAX_KEY_VALUE_LEN];
-
-    printf("Len = %d - %s\n", content_length, body);
-
-    // Parse the form data using ecjp
-    ret = ecjp_check_and_load_2(body, &item_list, &results);
-    if (ret != ECJP_NO_ERROR) {
-        printf("Error parsing settings form data: %d\n", ret);
-        ecjp_free_item_list(&item_list);
-        return;
-    }
-    else {
-        printf("Settings form data parsed successfully\n");
-        while (item_list != NULL) {
-            printf("Item read successfully.\n");
-            printf("Type = %s, Value = %s\n", ecjp_type[item_list->item.type], (char *)item_list->item.value);
-            if (item_list->item.type == ECJP_TYPE_OBJECT) {
-//                parse_level_2((char *)item_list->item.value);
-            }
-
-            if (item_list->item.type == ECJP_TYPE_KEY_VALUE_PAIR) {
-                // parse key-value pair
-                memset(key, 0, sizeof(key));
-                memset(value, 0, sizeof(value));
-                // for MCUs without sscanf support, use library function
-                // TODO: there is a bug here, ecjp_split_key_and_value returns error when value contains ":"
-                if (ecjp_split_key_and_value(item_list, key, value, ECJP_BOOL_TRUE) != ECJP_NO_ERROR) {
-                    printf("Failed to split key-value pair.\n");
-                } else  {
-                    printf("Key = '%s', Value = '%s'\n", key, value);
-                }
-            }   
-            item_list = item_list->next;
+    enum http_req_page page;
+    for (page = HTTP_REQ_STYLE; page < HTTP_REQ_MAX; page++) {
+        if (strcmp(url, http_req_page_str[page]) == 0) {
+            return page;
         }
     }
-    ecjp_free_item_list(&item_list);
-    return;
+    return HTTP_REQ_MAX;
 }
+
+enum http_req_api tcp_get_requested_api(const char *url)
+{
+    enum http_req_api api;
+    for (api = HTTP_API_INFO; api < HTTP_API_MAX; api++) {
+        if (strcmp(url, http_req_api_str[api]) == 0) {
+            return api;
+        }
+    }
+    return HTTP_API_MAX;
+}
+
 
 /*
  * Function: tcp_close_client_connection()
@@ -697,7 +670,7 @@ static int fill_server_content(const char *request, const char *params, char *re
                             "NET":"255.255.255.0",
                             "GW":"192.168.1.1"
                         },
-                        "PARAMS":{
+                        "SETTINGS":{
                             "TF":"C",
                             "OF":"CSV",
                             "PT":30,
@@ -777,7 +750,7 @@ static int fill_server_content(const char *request, const char *params, char *re
                     // Add parameters
                     len += snprintf(result + len,
                                     max_result_len - len,
-                                    "\"PARAMS\":{\"TF\":\"%s\",\"OF\":\"%s\",\"PT\":%d,\"TH\":%d},",
+                                    "\"SETTINGS\":{\"TF\":\"%s\",\"OF\":\"%s\",\"PT\":%d,\"TH\":%d},",
                                     (prtconfig->data.settings.options.t_format == T_FORMAT_CELSIUS) ? "C" : "F",
                                     (prtconfig->data.settings.options.out_format == OUT_FORMAT_TXT) ? "TXT" : "CSV",
                                     prtconfig->data.settings.options.poll_time,
@@ -1097,6 +1070,10 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
         }
         else if (strncmp(HTTP_POST, con_state->headers, sizeof(HTTP_POST) - 1) == 0) {
             // Handle POST request
+            char *request = con_state->headers + sizeof(HTTP_POST); // + space
+            char *params = NULL;
+            char parse_result = false;
+
             char *content_length_ptr = strstr(p->payload, "Content-Length:");
             if (content_length_ptr != NULL) {
                 // We have content length, so we can read the body
@@ -1116,7 +1093,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                         // We have the full body
                         printf("Body: %.*s\n", content_length, body);
                         // Here we would process the body content
-                        parse_settings_form(body, content_length);
+                        parse_result = parse_settings_form(body, content_length);
                     } else {
                         printf("Incomplete body received\n");
                     }
@@ -1127,8 +1104,12 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
             else {
                 printf("No Content-Length header found in POST request\n");
             }
-#if 1
-            char *request = con_state->headers + sizeof(HTTP_POST); // + space
+#if 0
+            // Generate content reply
+            memset(con_state->result, 0, sizeof(con_state->result));
+            con_state->result_len = fill_server_content(request, params, con_state->result, sizeof(con_state->result));
+
+#else
             // send 501 Not Implemented Error
             con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_IMPL_ERROR);
             err = tcp_write(pcb, con_state->headers, con_state->header_len, 0);

@@ -139,4 +139,43 @@ typedef struct wlt_rgb_led {
     uint64_t last_change; // Last time the LED color was changed
 } wlt_rgb_led_t;
 
+// API JSON parameters enums
+typedef struct api_parse_key 
+{
+    char *key;
+    wlt_error_t (*parse_func)(char *value);
+} api_parse_key_t;
+
+typedef enum {
+    PARAMS_WIFI,
+    PARAMS_SETTINGS,
+    PARAMS_THRESHOLDS,
+    PARAMS_MAX
+} params_type_t;
+
+// TODO: add ip, netmask, gateway parameters when in AP mode
+typedef enum {
+    WIFI_DEVICENAME,
+    WIFI_MODE,
+    WIFI_SSID,
+    WIFI_PASS,
+    WIFI_PARAM_MAX
+} wifi_param_t;\
+
+typedef enum {
+    SETTINGS_TEMP_FORMAT,
+    SETTINGS_OUTPUT_FORMAT,
+    SETTINGS_POLL_TIME,
+    SETTINGS_TRD_HYSTERIS,
+    SETTINGS_MAX
+} settings_param_t;
+
+typedef enum {
+    THRESHOLDS_HIGH_TEMP,
+    THRESHOLDS_HIGH_HUM,
+    THRESHOLDS_LOW_TEMP,
+    THRESHOLDS_LOW_HUM,
+    THRESHOLDS_MAX
+} thresholds_param_t;
+
 #endif // WLT_H

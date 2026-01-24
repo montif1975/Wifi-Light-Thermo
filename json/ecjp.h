@@ -57,7 +57,7 @@ typedef uint8_t bool;
 
 #define ECJP_VERSION_MAJOR           1
 #define ECJP_VERSION_MINOR           0
-#define ECJP_VERSION_PATCH           0
+#define ECJP_VERSION_PATCH           1
 
 #define ECJP_ARRAY_NO_INDEX         -1
 

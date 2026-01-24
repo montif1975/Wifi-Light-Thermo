@@ -38,6 +38,7 @@ pico_sdk_init()
 add_executable(wlt
     wlt.c
     wlt_tcp.c
+    wlt_api.c
     dht20.c
     eeprom_24LC256.c
     rgb.c

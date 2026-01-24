@@ -582,9 +582,14 @@ int main()
             printf("Using Wi-Fi password: %s\n", prtconfig->net_config.wifi_pass);
         } else {
             printf("Wi-Fi mode: AP\n");
+#if 1            
             // in AP mode we use hardcoded values for the SSID and password
             strncpy(prtconfig->net_config.wifi_ssid, WIFI_AP_SSID, sizeof(prtconfig->net_config.wifi_ssid));
             strncpy(prtconfig->net_config.wifi_pass, WIFI_AP_PASS, sizeof(prtconfig->net_config.wifi_pass));
+#else
+            printf("Using Wi-Fi SSID: %s\n", prtconfig->net_config.wifi_ssid);
+            printf("Using Wi-Fi password: %s\n", prtconfig->net_config.wifi_pass);
+#endif
         }
     }
 

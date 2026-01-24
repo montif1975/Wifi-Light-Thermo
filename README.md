@@ -72,7 +72,7 @@ Obviously all the connections and PINs used can be modified by acting on the def
 
 The simple web server implemented in the device serves this pages:
 
-| Page              | Available in AP mode | Avilable in STA mode |
+| Page              | Available in AP mode | Available in STA mode |
 |-------------------|----------------------|----------------------|
 | /info             |           YES        |        YES           |
 | /settings         |           YES        |        NO            |

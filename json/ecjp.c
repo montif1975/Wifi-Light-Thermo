@@ -1475,6 +1475,7 @@ ecjp_return_code_t ecjp_load_2(const char *input, ecjp_item_elem_t **item_list, 
 ecjp_return_code_t ecjp_split_key_and_value(ecjp_item_elem_t *item_list, char *key, char *value, ecjp_bool_t leave_quotes)
 {
     int i, j;
+    char inside_string = 0;
 
     if (item_list == NULL || key == NULL || value == NULL) {
         return ECJP_NULL_POINTER;
@@ -1483,8 +1484,10 @@ ecjp_return_code_t ecjp_split_key_and_value(ecjp_item_elem_t *item_list, char *k
     if (item_list->item.type != ECJP_TYPE_KEY_VALUE_PAIR) {
         return ECJP_SYNTAX_ERROR;
     }
+    // NOTE: The function assumes that the key and value are separated by a colon (:) and that the key is a string enclosed in quotes
+    // and there are no other quotes in the key or value.
     for (i = 0; i < item_list->item.value_size && i < ECJP_MAX_KEY_LEN; i++) {
-        if (((char *)item_list->item.value)[i] == ':') {
+        if ((((char *)item_list->item.value)[i] == ':') && (inside_string == 0)) {
             break;
         }
         else {
@@ -1492,6 +1495,11 @@ ecjp_return_code_t ecjp_split_key_and_value(ecjp_item_elem_t *item_list, char *k
                 (*key) = ((char *)item_list->item.value)[i];
                 key++;
             } else {
+                if (inside_string == 0) {
+                    inside_string = 1;
+                } else {
+                    inside_string = 0;
+                }
                 if (leave_quotes) {
                     (*key) = ((char *)item_list->item.value)[i];
                     key++;
@@ -1503,17 +1511,16 @@ ecjp_return_code_t ecjp_split_key_and_value(ecjp_item_elem_t *item_list, char *k
         return ECJP_NO_SPACE_IN_BUFFER_VALUE;
     }
     (*key) = '\0';
+    i++; // skip the colon
 
     for (j = 0; i < item_list->item.value_size && j < ECJP_MAX_KEY_VALUE_LEN; i++, j++) {
-        if (((char *)item_list->item.value)[i] != ':') {
-            if (((char *)item_list->item.value)[i] != '"') {
+        if (((char *)item_list->item.value)[i] != '"') {
+            (*value) = ((char *)item_list->item.value)[i];
+            value++;
+        } else {
+            if (leave_quotes) {
                 (*value) = ((char *)item_list->item.value)[i];
                 value++;
-            } else {
-                if (leave_quotes) {
-                    (*value) = ((char *)item_list->item.value)[i];
-                    value++;
-                }
             }
         }
     }
