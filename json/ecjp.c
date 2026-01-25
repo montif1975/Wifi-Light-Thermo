@@ -1485,7 +1485,7 @@ ecjp_return_code_t ecjp_split_key_and_value(ecjp_item_elem_t *item_list, char *k
         return ECJP_SYNTAX_ERROR;
     }
     // NOTE: The function assumes that the key and value are separated by a colon (:) and that the key is a string enclosed in quotes
-    // and there are no other quotes in the key or value.
+    // and there are no other quotes in the key.
     for (i = 0; i < item_list->item.value_size && i < ECJP_MAX_KEY_LEN; i++) {
         if ((((char *)item_list->item.value)[i] == ':') && (inside_string == 0)) {
             break;
@@ -1514,15 +1514,8 @@ ecjp_return_code_t ecjp_split_key_and_value(ecjp_item_elem_t *item_list, char *k
     i++; // skip the colon
 
     for (j = 0; i < item_list->item.value_size && j < ECJP_MAX_KEY_VALUE_LEN; i++, j++) {
-        if (((char *)item_list->item.value)[i] != '"') {
-            (*value) = ((char *)item_list->item.value)[i];
-            value++;
-        } else {
-            if (leave_quotes) {
-                (*value) = ((char *)item_list->item.value)[i];
-                value++;
-            }
-        }
+        (*value) = ((char *)item_list->item.value)[i];
+        value++;
     }
     if (j == ECJP_MAX_KEY_VALUE_LEN) {
         return ECJP_NO_SPACE_IN_BUFFER_VALUE;

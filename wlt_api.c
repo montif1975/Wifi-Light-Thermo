@@ -70,7 +70,7 @@ wlt_error_t api_parse_wifi(char *wifi_params)
                     memset(key, 0, sizeof(key));
                     memset(value, 0, sizeof(value));
                     // for MCUs without sscanf support, use library function
-                    if (ecjp_split_key_and_value(item_list, key, value, ECJP_BOOL_TRUE) != ECJP_NO_ERROR) {
+                    if (ecjp_split_key_and_value(item_list, key, value, ECJP_BOOL_FALSE) != ECJP_NO_ERROR) {
                         printf("Failed to split key-value pair.\n");
                     } else  {
                         printf("Key = '%s', Value = '%s'\n", key, value);
