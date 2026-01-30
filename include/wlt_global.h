@@ -5,6 +5,8 @@ extern wlt_run_time_config_t *prtconfig;
 extern wlt_config_data_t *pconfig;
 
 extern float C2F(float temperature);
+extern int check_wifi_password(const char *password);
+extern void fix_devname(const char *src, size_t src_len, char *dest, size_t dest_len);
 extern void wlt_update_and_save_config(wlt_run_time_config_t *rt_config, wlt_config_data_t *config);
 
 
