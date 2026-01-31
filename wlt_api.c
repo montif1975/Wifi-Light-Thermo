@@ -40,6 +40,44 @@ static char *threshold_subparams[2] = {
     "TR"
 };
 
+/*
+ * Function: check_and_remove_quotes()
+ * Description: This function checks if a string is enclosed in double quotes
+ *              and removes them if present.
+ * Parameters:
+ * str - pointer to the string to be checked and modified
+ * Returns:
+ * 1 if quotes were removed, 0 otherwise
+*/
+int check_and_remove_quotes(char *str)
+{
+    size_t len = strlen(str);
+    if (!str)
+        return 0;
+
+    if (len >= 2 && str[0] == '\"' && str[len - 1] == '\"')
+    {
+        for (size_t i = 0; i < len - 2; i++)
+        {
+            str[i] = str[i + 1];
+        }
+        for (size_t i = len - 2; i < len; i++)
+        {
+            str[i] = '\0';
+        }
+        return 1;
+    }
+    return 0;
+}
+
+/*
+ * Function: api_parse_wifi()
+ * Description: This function parses the WIFI parameters from a JSON string.
+ * Parameters:
+ * wifi_params - pointer to the JSON string containing WIFI parameters
+ * Returns:
+ * WLT_SUCCESS on success, WLT_GENERIC_ERROR or WLT_INVALID_PARAM on failure
+*/
 wlt_error_t api_parse_wifi(char *wifi_params)
 {
     wlt_error_t res;
@@ -77,6 +115,7 @@ wlt_error_t api_parse_wifi(char *wifi_params)
                         printf("Failed to split key-value pair.\n");
                         res = WLT_GENERIC_ERROR;
                     } else  {
+                        check_and_remove_quotes(value);
                         printf("Key = '%s', Value = '%s'\n", key, value);
                         for (i=0; i<WIFI_PARAM_MAX && res == WLT_SUCCESS; i++) {
                             if (strcmp(key, api_wifi_params[i]) == 0) {
@@ -151,6 +190,14 @@ wlt_error_t api_parse_wifi(char *wifi_params)
     return res;
 }
 
+/*
+ * Function: api_parse_settings()
+ * Description: This function parses the SETTINGS parameters from a JSON string.
+ * Parameters:
+ * settings_params - pointer to the JSON string containing SETTINGS parameters
+ * Returns:
+ * WLT_SUCCESS on success, WLT_GENERIC_ERROR or WLT_INVALID_PARAM on failure
+*/
 wlt_error_t api_parse_settings(char *settings_params)
 {
     wlt_error_t res;
@@ -188,7 +235,7 @@ wlt_error_t api_parse_settings(char *settings_params)
                         printf("Failed to split key-value pair.\n");
                         res = WLT_GENERIC_ERROR;
                     } else  {
-                        // TODO: value contain '"' for strings, need to remove them
+                        check_and_remove_quotes(value);
                         printf("Key = '%s', Value = '%s'\n", key, value);
                         for (i=0; i<SETTINGS_MAX && res == WLT_SUCCESS; i++) {
                             if (strcmp(key, api_settings_params[i]) == 0) {
@@ -274,6 +321,14 @@ wlt_error_t api_parse_settings(char *settings_params)
     return res;
 }
 
+/*
+ * Function: api_parse_thresholds()
+ * Description: This function parses the THRESHOLD parameters from a JSON string.
+ * Parameters:
+ * thresholds_params - pointer to the JSON string containing THRESHOLD parameters
+ * Returns:
+ * WLT_SUCCESS on success, WLT_GENERIC_ERROR or WLT_INVALID_PARAM on failure
+*/
 wlt_error_t api_parse_thresholds(char *thresholds_params)
 {
     wlt_error_t res;
@@ -311,6 +366,7 @@ wlt_error_t api_parse_thresholds(char *thresholds_params)
                         printf("Failed to split key-value pair.\n");
                         res = WLT_GENERIC_ERROR;
                     } else  {
+                        check_and_remove_quotes(value);
                         printf("Key = '%s', Value = '%s'\n", key, value);
                         for (i=0; i<THRESHOLDS_MAX && res == WLT_SUCCESS; i++) {
                             if (strcmp(key, api_thresholds_params[i]) == 0) {
@@ -338,6 +394,15 @@ wlt_error_t api_parse_thresholds(char *thresholds_params)
     return res;
 }
 
+/*
+ * Function: api_parse_threshold_subparam()
+ * Description: This function parses a THRESHOLD subparameter from a JSON string.
+ * Parameters:
+ * subparam - pointer to the subparameter name
+ * value - pointer to the subparameter value
+ * Returns:
+ * WLT_SUCCESS on success, WLT_GENERIC_ERROR or WLT_INVALID_PARAM on failure
+*/
 wlt_error_t api_parse_threshold_subparam(const char *subparam, const char *value)
 {
     wlt_error_t res = WLT_SUCCESS;
@@ -348,7 +413,6 @@ wlt_error_t api_parse_threshold_subparam(const char *subparam, const char *value
 
     return res;
 }
-
 
 /**
  * Function: parse_settings_form()
