@@ -355,6 +355,7 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 #define API_INFO_REPLY                      "{\"T\":%.2f,\"TF\":\"%s\",\"H\":%.2f}"
 
 #define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" INFO_URL "\r\n\r\n"
+#define HTTP_RESPONSE_BAD_REQUEST           "HTTP/1.1 400 Bad Request\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_NOT_FOUND             "HTTP/1.1 404 Not Found\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_NOT_IMPL_ERROR        "HTTP/1.1 501 Not implemented\nContent-Length: 0\nConnection: close\r\n\r\n"
@@ -376,18 +377,14 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 #define SET_LOW_HUM_URL                     "/setlowhum"
 #define SET_LOW_HUM_FORM_URL                "/setlowhumform"
 
-
 #define API_BASE_URL                        "/api"
 #define API_VERS                            "/v1"
 #define API_GET_INFO_URL                    API_BASE_URL API_VERS "/info"
 #define API_GET_SETTINGS_URL                API_BASE_URL API_VERS "/settings"
-#define API_SET_PARAMS_URL                  API_BASE_URL API_VERS "/setparams"
-#define API_SET_ADVANCED_PARAMS_URL         API_BASE_URL API_VERS "/setadvparams"
-#define API_SET_HIGH_TEMP_URL               API_BASE_URL API_VERS "/sethightemp"
-#define API_SET_LOW_TEMP_URL                API_BASE_URL API_VERS "/setlowtemp"
-#define API_SET_HIGH_HUM_URL                API_BASE_URL API_VERS "/sethighhum"
-#define API_SET_LOW_HUM_URL                 API_BASE_URL API_VERS "/setlowhum"
-
+#define API_SET_ALL_PARAMS_URL              API_BASE_URL API_VERS "/setallparams"
+#define API_SET_WIFI_PARAMS_URL             API_BASE_URL API_VERS "/setwifiparams"
+#define API_SET_SETTING_PARAMS_URL          API_BASE_URL API_VERS "/setsettingparams"
+#define API_SET_THRESH_PARAMS_URL           API_BASE_URL API_VERS "/setthreshparams"
 
 enum http_req_page {
     HTTP_REQ_STYLE,
@@ -412,12 +409,10 @@ enum http_req_page {
 enum http_req_api {
     HTTP_API_INFO,
     HTTP_API_GET_SETTINGS,
-    HTTP_API_SET_PARAMS,
-    HTTP_API_SET_ADVANCED_PARAMS,
-    HTTP_API_SET_HIGH_TEMP,
-    HTTP_API_SET_LOW_TEMP,
-    HTTP_API_SET_HIGH_HUM,
-    HTTP_API_SET_LOW_HUM,
+    HTTP_API_SET_ALL_PARAMS,
+    HTTP_API_SET_WIFI_PARAMS,
+    HTTP_API_SET_SETTING_PARAMS,
+    HTTP_API_SET_THRESH_PARAMS,
     HTTP_API_MAX   
 };
 

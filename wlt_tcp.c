@@ -5,8 +5,8 @@
 #include "include/wlt_global.h"
 #include "json/ecjp.h"
 
-extern wlt_error_t parse_settings_form(char *body, size_t content_length);
-
+extern wlt_error_t parse_post_specific_body(char *body, int api_index);
+extern wlt_error_t parse_post_body(char *body, size_t content_length);
 
 static char *http_req_page_str[HTTP_REQ_MAX] = {
     STYLE_URL,
@@ -30,19 +30,17 @@ static char *http_req_page_str[HTTP_REQ_MAX] = {
 static char *http_req_api_str[HTTP_API_MAX] = {
     API_GET_INFO_URL,
     API_GET_SETTINGS_URL,
-    API_SET_PARAMS_URL,
-    API_SET_HIGH_TEMP_URL,
-    API_SET_LOW_TEMP_URL, 
-    API_SET_HIGH_HUM_URL, 
-    API_SET_LOW_HUM_URL
+    API_SET_ALL_PARAMS_URL,
+    API_SET_WIFI_PARAMS_URL,
+    API_SET_SETTING_PARAMS_URL, 
+    API_SET_THRESH_PARAMS_URL
 };
-
 
 enum http_req_page tcp_get_requested_page(const char *url)
 {
     enum http_req_page page;
     for (page = HTTP_REQ_STYLE; page < HTTP_REQ_MAX; page++) {
-        if (strcmp(url, http_req_page_str[page]) == 0) {
+        if (strstr(url, http_req_page_str[page]) != NULL) {
             return page;
         }
     }
@@ -53,13 +51,12 @@ enum http_req_api tcp_get_requested_api(const char *url)
 {
     enum http_req_api api;
     for (api = HTTP_API_INFO; api < HTTP_API_MAX; api++) {
-        if (strcmp(url, http_req_api_str[api]) == 0) {
+        if (strstr(url, http_req_api_str[api]) != NULL) {
             return api;
         }
     }
     return HTTP_API_MAX;
 }
-
 
 /*
  * Function: tcp_close_client_connection()
@@ -839,18 +836,11 @@ static int fill_server_content(const char *request, const char *params, char *re
                     }
                     break;
 
-                case HTTP_API_SET_PARAMS:
-                    break;
-
-                case HTTP_API_SET_ADVANCED_PARAMS:
-                    break;
-
-                case HTTP_API_SET_HIGH_TEMP:
-                case HTTP_API_SET_LOW_TEMP:
-                case HTTP_API_SET_HIGH_HUM:
-                case HTTP_API_SET_LOW_HUM:
-                    // Handle setting parameters (not implemented)
-                    len = snprintf(result, max_result_len, "{\"status\":\"not_implemented_yet\"}");
+                case HTTP_API_SET_ALL_PARAMS:
+                case HTTP_API_SET_WIFI_PARAMS:
+                case HTTP_API_SET_SETTING_PARAMS:
+                case HTTP_API_SET_THRESH_PARAMS:
+                    len = snprintf(result, max_result_len, "{\"status\":\"ok\"}");
                     if (len >= max_result_len) {
                         printf("Result buffer too small for API set params (len=%d, max_result_len=%zu)\n", len, max_result_len);
                         return 0; // Error
@@ -903,6 +893,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
 
         // Handle GET request
         if (strncmp(HTTP_GET, con_state->headers, sizeof(HTTP_GET) - 1) == 0) {
+            int http_req_index = -1;
             char *request = con_state->headers + sizeof(HTTP_GET); // + space
             char *params = strchr(request, '?');
             if (params) {
@@ -915,6 +906,23 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                 } else {
                     params = NULL;
                 }
+            }
+
+            http_req_index = tcp_get_requested_page(request);
+            if (http_req_index < HTTP_REQ_MAX) {
+                printf("Request matches page: %s\n", http_req_page_str[http_req_index]);
+            } else {
+                printf("Unsupported HTTP request: %s\n", request);
+                // send 404 Not Found
+                con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_FOUND);
+                err = tcp_write(pcb, con_state->headers, con_state->header_len, 0);
+                if (err != ERR_OK) {
+                    printf("failed to write unsupported request data %d\n", err);
+                    pbuf_free(p);
+                    return tcp_close_client_connection(con_state, pcb, err);
+                }
+                pbuf_free(p);
+                return ERR_OK;
             }
 
             // Generate content
@@ -999,6 +1007,24 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
             char *request = con_state->headers + sizeof(HTTP_POST); // + space
             char *params = NULL;
             char parse_result = false;
+            int api_index = -1;
+
+            api_index = tcp_get_requested_api(request);
+            if (api_index < HTTP_API_MAX) {
+                printf("Request matches API: %s\n", http_req_api_str[api_index]);
+            } else {
+                printf("Unsupported POST request: %s\n", request);
+                // send 404 Not Found
+                con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_FOUND);
+                err = tcp_write(pcb, con_state->headers, con_state->header_len, 0);
+                if (err != ERR_OK) {
+                    printf("failed to write unsupported request data %d\n", err);
+                    pbuf_free(p);
+                    return tcp_close_client_connection(con_state, pcb, err);
+                }
+                pbuf_free(p);
+                return ERR_OK;
+            }
 
             char *content_length_ptr = strstr(p->payload, "Content-Length:");
             if (content_length_ptr != NULL) {
@@ -1018,8 +1044,35 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                         body[content_length] = 0;
                         // We have the full body
                         printf("Body: %.*s\n", content_length, body);
-                        // Here we would process the body content
-                        parse_result = parse_settings_form(body, content_length);
+                        // Here we would process the body content depending on the API
+                        switch (api_index)
+                        {
+                            case HTTP_API_SET_WIFI_PARAMS:
+                                // in this case we expect ONLY a specific type of parameters in the body
+                                parse_result = parse_post_specific_body(body, PARAMS_WIFI);
+                                break;
+
+                            case HTTP_API_SET_SETTING_PARAMS:
+                                // in this case we expect ONLY a specific type of parameters in the body
+                                parse_result = parse_post_specific_body(body, PARAMS_SETTINGS);
+                                break;
+
+                            case HTTP_API_SET_THRESH_PARAMS:
+                                // in this case we expect ONLY a specific type of parameters in the body
+                                parse_result = parse_post_specific_body(body, PARAMS_THRESHOLDS);
+                                break;
+
+                            case HTTP_API_SET_ALL_PARAMS:
+                                // in this case we need to parse all parameters that are in the body
+                                printf("Processing SET_ALL_PARAMS API request\n");
+                                parse_result = parse_post_body(body, content_length);
+                                break;
+
+                            default:
+                                printf("Unknown API POST request\n");
+                                parse_result = WLT_GENERIC_ERROR;
+                                break;
+                        }
                     } else {
                         printf("Incomplete body received\n");
                         parse_result = WLT_GENERIC_ERROR;
@@ -1033,16 +1086,18 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                 printf("No Content-Length header found in POST request\n");
                 parse_result = WLT_GENERIC_ERROR;
             }
-#if 1
+
             if (parse_result == WLT_SUCCESS) {
                 // Generate content reply
                 memset(con_state->result, 0, sizeof(con_state->result));
+                printf("Filling server content for request: %s with params: %s\n", request, params ? params : "NULL");
                 con_state->result_len = fill_server_content(request, params, con_state->result, sizeof(con_state->result));
                 // send 200 OK
                 con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS_JSON, 200, con_state->result_len,"json");
             } else {
                 // send 400 Bad Request
-                con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_IMPL_ERROR);
+                con_state->result_len = 0;
+                con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_BAD_REQUEST);
             }   
             err = tcp_write(pcb, con_state->headers, con_state->header_len, 0);
             if (err != ERR_OK) {
@@ -1050,16 +1105,16 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                 pbuf_free(p);
                 return tcp_close_client_connection(con_state, pcb, err);
             }
-#else
-            // send 501 Not Implemented Error
-            con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_IMPL_ERROR);
-            err = tcp_write(pcb, con_state->headers, con_state->header_len, 0);
-            if (err != ERR_OK) {
-                printf("failed to write unsupported request data %d\n", err);
-                pbuf_free(p);
-                return tcp_close_client_connection(con_state, pcb, err);
+
+            // Send the body to the client
+            if (con_state->result_len) {
+                err = tcp_write(pcb, con_state->result, con_state->result_len, 0);
+                if (err != ERR_OK) {
+                    printf("failed to write result data %d\n", err);
+                    pbuf_free(p);
+                    return tcp_close_client_connection(con_state, pcb, err);
+                }
             }
-#endif
         }
         else {
             // Unsupported request, send 404 Not Found

@@ -96,6 +96,8 @@ wlt_error_t api_parse_wifi(char *wifi_params)
     char value[ECJP_MAX_KEY_VALUE_LEN];
     int i;
     
+    memset(&results, 0, sizeof(results));
+
     printf("Parsing WIFI parameters...\n");
     ret = ecjp_check_and_load_2(wifi_params, &item_list, &results);
     if (ret != ECJP_NO_ERROR) {
@@ -213,6 +215,8 @@ wlt_error_t api_parse_settings(char *settings_params)
     char value[ECJP_MAX_KEY_VALUE_LEN];
     int i;
     
+    memset(&results, 0, sizeof(results));
+
     printf("Parsing SETTINGS parameters...\n");
     ret = ecjp_check_and_load_2(settings_params, &item_list, &results);
     if (ret != ECJP_NO_ERROR) {
@@ -241,7 +245,7 @@ wlt_error_t api_parse_settings(char *settings_params)
                         printf("Key = '%s', Value = '%s'\n", key, value);
                         for (i=0; i<SETTINGS_MAX && res == WLT_SUCCESS; i++) {
                             if (strcmp(key, api_settings_params[i]) == 0) {
-                                printf("Found key '%s', parsing...\n", key);
+                                printf("(i=%d) Found key '%s', parsing...\n", i, key);
                                 switch (i) {
                                     case SETTINGS_TEMP_FORMAT:
                                         printf("Setting Temperature Format to '%s'\n", value);
@@ -341,6 +345,8 @@ wlt_error_t api_parse_thresholds(char *thresholds_params)
     char value[ECJP_MAX_KEY_VALUE_LEN];
     int i;
     
+    memset(&results, 0, sizeof(results));
+
     printf("Parsing THRESHOLD parameters...\n");
     ret = ecjp_check_and_load_2(thresholds_params, &item_list, &results);
     if (ret != ECJP_NO_ERROR) {
@@ -431,6 +437,8 @@ wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value)
     char key[ECJP_MAX_KEY_LEN];
     char val[ECJP_MAX_KEY_VALUE_LEN];
     int i;
+
+    memset(&results, 0, sizeof(results));
 
     printf("Parsing threshold subparam '%s' with value '%s'\n", api_thresholds_params[subparam_index], value);
     // value is a JSON object with subparameters
@@ -609,14 +617,90 @@ wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value)
     return res;
 }
 
+/*
+ * Function: parse_post_specific_body()
+ * Description: This function parses the specific form data received from the client calling the parse function associated with the API index.
+ * Parameters:
+ * body - pointer to the body of the HTTP request
+ * api_index - index of the API being called
+*/
+wlt_error_t parse_post_specific_body(char *body, int api_index)
+{
+    wlt_error_t res;
+    ecjp_return_code_t ret;
+    ecjp_check_result_t results;
+    ecjp_item_elem_t *item_list = NULL;
+    char key[ECJP_MAX_KEY_LEN];
+    char value[ECJP_MAX_KEY_VALUE_LEN];
+    int i;
+
+    res = WLT_GENERIC_ERROR;
+    if (api_index < 0 || api_index >= PARAMS_MAX) {
+        printf("Invalid API index: %d\n", api_index);
+        res = WLT_INVALID_ARGUMENT;
+        return res;
+    }
+
+    // Parse the form data using ecjp
+    ret = ecjp_check_and_load_2(body, &item_list, &results);
+    if (ret != ECJP_NO_ERROR) {
+        printf("Error parsing settings form data: %d\n", ret);
+        ecjp_free_item_list(&item_list);
+        return WLT_GENERIC_ERROR;
+    }
+    else {
+        res = WLT_SUCCESS;
+        while (item_list != NULL) {
+            printf("Type = %s, Value = %s\n", ecjp_type[item_list->item.type], (char *)item_list->item.value);
+            switch (item_list->item.type) {
+                case ECJP_TYPE_OBJECT:
+                case ECJP_TYPE_ARRAY:
+                    printf("Parsing Object and Array not supported\n");
+                    break;
+                
+                case ECJP_TYPE_KEY_VALUE_PAIR:
+                    printf("Parsing key-value pair...\n");
+                    memset(key, 0, sizeof(key));
+                    memset(value, 0, sizeof(value));
+                    // for MCUs without sscanf support, use library function
+                    if (ecjp_split_key_and_value(item_list, key, value, ECJP_BOOL_FALSE) != ECJP_NO_ERROR) {
+                        printf("Failed to split key-value pair.\n");
+                    } else  {
+                        printf("Key = '%s', Value = '%s'\n", key, value);
+                        if (api_parse_keys[api_index].parse_func != NULL) {
+                            res = api_parse_keys[api_index].parse_func(value);
+                            if (res != WLT_SUCCESS) {
+                                printf("Failed to parse value for key '%s'\n", key);
+                                res = WLT_GENERIC_ERROR;
+                            } else {
+                                printf("Parsed value for key '%s' successfully.\n", key);
+                            }
+                        } else {
+                            printf("No parse function defined for key '%s'\n", key);
+                            res = WLT_GENERIC_ERROR;
+                        }
+                    }
+                    break;
+                
+                default:
+                    printf("Unknown type.\n");
+                    break;
+            }
+            item_list = item_list->next;
+        }
+    }
+    ecjp_free_item_list(&item_list);
+    return res;
+}
+
 /**
- * Function: parse_settings_form()
+ * Function: parse_post_body()
  * Description: This function parses the settings form data received from the client.
  * Parameters:
  * body - pointer to the body of the HTTP request
  * content_length - length of the content
  */
-wlt_error_t parse_settings_form(char *body, size_t content_length)
+wlt_error_t parse_post_body(char *body, size_t content_length)
 {
     wlt_error_t res;
     ecjp_return_code_t ret;
@@ -674,6 +758,8 @@ wlt_error_t parse_settings_form(char *body, size_t content_length)
                                 break;
                             }
                         }
+                        // todo: la funzione torna positivamente anche se trova solo una chiave valida.
+                        // con /api/v1/setallparams bisogna che tutte le chiavi siano valide
                     }
                     break;
                 

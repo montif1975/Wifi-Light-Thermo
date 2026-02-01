@@ -367,6 +367,9 @@ void wlt_set_led_color(int index, wlt_rgb_led_t *led_state)
 {
     int color;
 
+    // first of all power off the led
+    rgb_set_led_color(RGB_COLOR_OFF);
+    
     if(led_state == NULL) {
         // when the function is called with NULL, it means that the caller is error handling
         // in this case, we don't need to update the led_state but only set the color
@@ -484,12 +487,14 @@ void wlt_goto_error(int led_color)
             sleep_ms(RGB_LED_ON_TIME_MS);
             wlt_set_led_color(RGB_COLOR_OFF, NULL);
             sleep_ms(RGB_LED_OFF_TIME_MS);
+            printf(".");
         }
     } else {
         // Just set the LED to the color without blinking
         wlt_set_led_color(color, NULL);
         while (1) {
             sleep_ms(1000);
+            printf(".");
         }
     }
     
