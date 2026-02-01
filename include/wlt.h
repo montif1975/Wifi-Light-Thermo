@@ -81,12 +81,13 @@ typedef union settings {
     } options;
 } settings_t;
 
-enum trd_trigger {
-    TRD_TRIGGER_NONE    = 0,     // No trigger
-    TRD_TRIGGER_HIGH    = 1,     // Trigger when value is up the threshold
-    TRD_TRIGGER_LOW     = 2,     // Trigger when value is below the threshold
-    TRD_TRIGGER_BOTH    = 3      // Trigger when value is up and below the threshold
-};
+typedef enum {
+    TRD_TRIGGER_NONE,   // No trigger
+    TRD_TRIGGER_HIGH,   // Trigger when value is up the threshold
+    TRD_TRIGGER_LOW,    // Trigger when value is below the threshold
+    TRD_TRIGGER_BOTH,   // Trigger when value is up and below the threshold
+    TRD_TRIGGER_MAX
+} trd_trigger_t;
 
 typedef struct trd {
     float   value;      // threshold value
@@ -177,5 +178,11 @@ typedef enum {
     THRESHOLDS_LOW_HUM,
     THRESHOLDS_MAX
 } thresholds_param_t;
+
+typedef enum {
+    THRESH_SUBPARAM_VALUE,
+    THRESH_SUBPARAM_TRIGGER,
+    THRESH_SUBPARAM_MAX
+} threshold_subparam_t;
 
 #endif // WLT_H

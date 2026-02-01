@@ -1022,19 +1022,34 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                         parse_result = parse_settings_form(body, content_length);
                     } else {
                         printf("Incomplete body received\n");
+                        parse_result = WLT_GENERIC_ERROR;
                     }
                 } else {
                     printf("No body found in POST request\n");
+                    parse_result = WLT_GENERIC_ERROR;
                 }
             }
             else {
                 printf("No Content-Length header found in POST request\n");
+                parse_result = WLT_GENERIC_ERROR;
             }
-#if 0
-            // Generate content reply
-            memset(con_state->result, 0, sizeof(con_state->result));
-            con_state->result_len = fill_server_content(request, params, con_state->result, sizeof(con_state->result));
-
+#if 1
+            if (parse_result == WLT_SUCCESS) {
+                // Generate content reply
+                memset(con_state->result, 0, sizeof(con_state->result));
+                con_state->result_len = fill_server_content(request, params, con_state->result, sizeof(con_state->result));
+                // send 200 OK
+                con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_HEADERS_JSON, 200, con_state->result_len,"json");
+            } else {
+                // send 400 Bad Request
+                con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_IMPL_ERROR);
+            }   
+            err = tcp_write(pcb, con_state->headers, con_state->header_len, 0);
+            if (err != ERR_OK) {
+                printf("failed to write unsupported request data %d\n", err);
+                pbuf_free(p);
+                return tcp_close_client_connection(con_state, pcb, err);
+            }
 #else
             // send 501 Not Implemented Error
             con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_IMPL_ERROR);
