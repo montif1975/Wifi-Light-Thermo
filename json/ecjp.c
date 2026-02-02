@@ -1179,6 +1179,30 @@ ecjp_return_code_t ecjp_check_and_load_2(const char *input, ecjp_item_elem_t **i
                                     break;
 
                                 case '}':
+                                    if (ecjp_get_level_parse_stack(&(p->parse_stack)) > 0) {
+                                        ecjp_store_tmp_item(tmp_buffer, &p_buffer, input[p->index]);
+                                    }
+                                    if (ecjp_get_level_parse_stack(&(p->parse_stack)) == 0) {
+                                        if (item_list != NULL)
+                                        {
+                                            res->memory_used += ecjp_load_item(&token, tmp_buffer, p_buffer);
+                                            // Add item token to the list
+                                            if (ecjp_add_node_item_end(item_list, &token) != 0) {
+                                                res->err_pos = p->index;
+                                                ecjp_printf("%s - %d: Failed to add item token to the list\n", __FUNCTION__,__LINE__);
+                                                return ECJP_GENERIC_ERROR;
+                                            } else {
+#ifdef DEBUG_VERBOSE
+                                                ecjp_printf("%s - %d: Added item token to the list, item_list = %p\n", __FUNCTION__,__LINE__, (void *)*item_list);
+#endif
+                                                res->memory_used += sizeof(ecjp_item_elem_t);
+                                                res->num_keys++;
+                                            }
+                                        }
+                                        // Reset token for next item
+                                        ecjp_init_item_token(&token);
+                                        ecjp_reset_tmp_buffer(tmp_buffer, &p_buffer);
+                                    }
                                     if (ecjp_pop_parse_stack(&(p->parse_stack), '{') == ECJP_BOOL_FALSE) {
                                         res->err_pos = p->index;
                                         ecjp_printf("%s - %d: Unexpected closing bracket\n", __FUNCTION__,__LINE__);
@@ -1195,10 +1219,33 @@ ecjp_return_code_t ecjp_check_and_load_2(const char *input, ecjp_item_elem_t **i
                                     } else {
                                         p->status = ECJP_PS_WAIT_COMMA;
                                     }
-                                    ecjp_store_tmp_item(tmp_buffer, &p_buffer, input[p->index]);
                                     break;
 
                                 case ']':
+                                    if (ecjp_get_level_parse_stack(&(p->parse_stack)) > 0) {
+                                        ecjp_store_tmp_item(tmp_buffer, &p_buffer, input[p->index]);
+                                    }
+                                    if (ecjp_get_level_parse_stack(&(p->parse_stack)) == 0) {
+                                        if (item_list != NULL)
+                                        {
+                                            res->memory_used += ecjp_load_item(&token, tmp_buffer, p_buffer);
+                                            // Add item token to the list
+                                            if (ecjp_add_node_item_end(item_list, &token) != 0) {
+                                                res->err_pos = p->index;
+                                                ecjp_printf("%s - %d: Failed to add item token to the list\n", __FUNCTION__,__LINE__);
+                                                return ECJP_GENERIC_ERROR;
+                                            } else {
+#ifdef DEBUG_VERBOSE
+                                                ecjp_printf("%s - %d: Added item token to the list, item_list = %p\n", __FUNCTION__,__LINE__, (void *)*item_list);
+#endif
+                                                res->memory_used += sizeof(ecjp_item_elem_t);
+                                                res->num_keys++;
+                                            }
+                                        }
+                                        // Reset token for next item
+                                        ecjp_init_item_token(&token);
+                                        ecjp_reset_tmp_buffer(tmp_buffer, &p_buffer);
+                                    }
                                     if (ecjp_pop_parse_stack(&(p->parse_stack), '[') == ECJP_BOOL_FALSE) {
                                         res->err_pos = p->index;
                                         ecjp_printf("%s - %d: Unexpected closing square bracket\n", __FUNCTION__,__LINE__);
@@ -1215,7 +1262,6 @@ ecjp_return_code_t ecjp_check_and_load_2(const char *input, ecjp_item_elem_t **i
                                     } else {
                                         p->status = ECJP_PS_WAIT_COMMA;
                                     }
-                                    ecjp_store_tmp_item(tmp_buffer, &p_buffer, input[p->index]);
                                     break;
 
                                 default:
