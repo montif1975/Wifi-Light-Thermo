@@ -374,7 +374,8 @@ void wlt_set_led_color(int index, wlt_rgb_led_t *led_state)
         // when the function is called with NULL, it means that the caller is error handling
         // in this case, we don't need to update the led_state but only set the color
         color = index & ~RGB_BLINK_OPT; // Remove the blink option bit
-        rgb_set_led_color(index);
+        printf("Setting LED color to %s (error handling)\n", rgb_colors_names[color]);
+        rgb_set_led_color(color);
         return;
     }
 
@@ -391,13 +392,11 @@ void wlt_set_led_color(int index, wlt_rgb_led_t *led_state)
         return;
     }
     led_state->color = color; // Set the current color
-#if DEBUG
-    printf("Setting LED color, index: %d\n", color);
-#endif
     if(color != RGB_COLOR_OFF)
         led_state->is_on = true; // Set the LED state to on
     else
         led_state->is_on = false; // Set the LED state to off
+    printf("Setting LED color to %s blink: %s\n", rgb_colors_names[color], led_state->blink ? "true" : "false");
     rgb_set_led_color(color);
     led_state->last_change = time_us_64(); // Update the last change time
 
@@ -470,6 +469,24 @@ void wlt_update_rgb_led(uint8_t mode, wlt_rgb_led_t *led_status, int64_t tick)
     return;
 }
 
+#if DEBUG
+void wlt_rgb_test(void)
+{
+    int i;
+    wlt_rgb_led_t led_status;
+
+    memset(&led_status, 0, sizeof(led_status));
+    // no blink test
+    for(i=0; i<RGB_COLOR_MAX; i++)
+    {
+        wlt_set_led_color(i, &led_status);
+        sleep_ms(2000);
+    }
+
+    return;
+}
+#endif
+
 /*
 * Function: wlt_goto_error()
  * Description: This function sets the RGB LED to red with blink option and enters an infinite loop to indicate an error state.
@@ -477,13 +494,13 @@ void wlt_update_rgb_led(uint8_t mode, wlt_rgb_led_t *led_status, int64_t tick)
 */
 void wlt_goto_error(int led_color)
 {
-    int color = led_color & ~RGB_BLINK_OPT; // Remove the blink option bit
+//    int color = led_color & ~RGB_BLINK_OPT; // Remove the blink option bit
     int do_blink = (led_color & RGB_BLINK_OPT) ? 1 : 0;
 
     if(do_blink) {
         while (1) {
             // Set the RGB LED to color
-            wlt_set_led_color(color, NULL);
+            wlt_set_led_color(led_color, NULL);
             sleep_ms(RGB_LED_ON_TIME_MS);
             wlt_set_led_color(RGB_COLOR_OFF, NULL);
             sleep_ms(RGB_LED_OFF_TIME_MS);
@@ -491,7 +508,7 @@ void wlt_goto_error(int led_color)
         }
     } else {
         // Just set the LED to the color without blinking
-        wlt_set_led_color(color, NULL);
+        wlt_set_led_color(led_color, NULL);
         while (1) {
             sleep_ms(1000);
             printf(".");
@@ -528,6 +545,10 @@ int main()
     wlt_init_port_sensor();
     wlt_init_uart();
     rgb_init();
+
+#if DEBUG
+    wlt_rgb_test();
+#endif
 
     // switch on the RGB LED
     wlt_set_led_color(RGB_LED_ON_BOOT,&rgb_led); // Set the LED color on boot
