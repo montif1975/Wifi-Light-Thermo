@@ -198,7 +198,7 @@ The `/api/v1/setsettingparams` body request is:
 where:  
 - "C" = Celsius degree  
 - "F" = Fahrenheit degree  
-- "TXT" = text format: T=XX.YY, H=ZZ,ZZ  (es. )  
+- "TXT" = text format: XX.YY °C/°F - XX,YY %RH  (es. 35.25 °C - 45.50 %RH)  
 - "CSV" = Comma Separated Values: temp;hum (es. 23.45;57.45)  
 
 ### /api/v1/setthreshparams  
