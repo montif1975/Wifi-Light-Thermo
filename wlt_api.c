@@ -436,7 +436,8 @@ wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value)
     ecjp_item_elem_t *item_list = NULL;
     char key[ECJP_MAX_KEY_LEN];
     char val[ECJP_MAX_KEY_VALUE_LEN];
-    int i;
+    int i, j;
+    float thval;
 
     memset(&results, 0, sizeof(results));
 
@@ -475,20 +476,29 @@ wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value)
                                         {
                                             case THRESH_SUBPARAM_VALUE:
                                                 {
-                                                    float val = atof(value);
-                                                    printf("Setting High Temperature Threshold to '%0.2f'\n", val);
-                                                    prtconfig->data.thresholds.high.temperature.value = val;
+                                                    thval = atof(value);
+                                                    printf("Setting High Temperature Threshold to '%0.2f'\n", thval);
+                                                    if(thval < MIN_THR_TEMP_VALUE || thval > MAX_THR_TEMP_VALUE) {
+                                                        printf("Invalid High Temperature Threshold value: %0.2f\n", thval);
+                                                        res = WLT_INVALID_ARGUMENT;
+                                                        break;
+                                                    }
+                                                    prtconfig->data.thresholds.high.temperature.value = thval;
                                                 }
                                                 break;
 
                                             case THRESH_SUBPARAM_TRIGGER:
                                                 {
-                                                    for (int j=0; j<TRD_TRIGGER_MAX; j++) {
+                                                    for (j=0; j<TRD_TRIGGER_MAX; j++) {
                                                         if (strcmp(value, threshold_trigger_types[j]) == 0) {
                                                             printf("Setting High Temperature Threshold Trigger to '%s'\n", value);
                                                             prtconfig->data.thresholds.high.temperature.trigger = j;
                                                             break;
                                                         }
+                                                    }
+                                                    if(j == TRD_TRIGGER_MAX) {
+                                                        printf("Invalid High Temperature Threshold Trigger value: %s\n", value);
+                                                        res = WLT_INVALID_ARGUMENT;
                                                     }
                                                 }
                                                 break;
@@ -505,20 +515,29 @@ wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value)
                                         {
                                             case THRESH_SUBPARAM_VALUE:
                                                 {
-                                                    float val = atof(value);
-                                                    printf("Setting High Humidity Threshold to '%0.2f'\n", val);
-                                                    prtconfig->data.thresholds.high.humidity.value = val;
+                                                    thval = atof(value);
+                                                    printf("Setting High Humidity Threshold to '%0.2f'\n", thval);
+                                                    if(thval < MIN_THR_HUM_VALUE || thval > MAX_THR_HUM_VALUE) {
+                                                        printf("Invalid High Humidity Threshold value: %0.2f\n", thval);
+                                                        res = WLT_INVALID_ARGUMENT;
+                                                        break;
+                                                    }
+                                                    prtconfig->data.thresholds.high.humidity.value = thval;
                                                 }
                                                 break;
 
                                             case THRESH_SUBPARAM_TRIGGER:
                                                 {
-                                                    for (int j=0; j<TRD_TRIGGER_MAX; j++) {
+                                                    for (j=0; j<TRD_TRIGGER_MAX; j++) {
                                                         if (strcmp(value, threshold_trigger_types[j]) == 0) {
                                                             printf("Setting High Humidity Threshold Trigger to '%s'\n", value);
                                                             prtconfig->data.thresholds.high.humidity.trigger = j;
                                                             break;
                                                         }
+                                                    }
+                                                    if(j == TRD_TRIGGER_MAX) {
+                                                        printf("Invalid High Humidity Threshold Trigger value: %s\n", value);
+                                                        res = WLT_INVALID_ARGUMENT;
                                                     }
                                                 }
                                                 break;
@@ -535,20 +554,29 @@ wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value)
                                         {
                                             case THRESH_SUBPARAM_VALUE:
                                                 {
-                                                    float val = atof(value);
-                                                    printf("Setting Low Temperature Threshold to '%0.2f'\n", val);
-                                                    prtconfig->data.thresholds.low.temperature.value = val;
+                                                    float thval = atof(value);
+                                                    printf("Setting Low Temperature Threshold to '%0.2f'\n", thval);
+                                                    if(thval < MIN_THR_TEMP_VALUE || thval > MAX_THR_TEMP_VALUE) {
+                                                        printf("Invalid Low Temperature Threshold value: %0.2f\n", thval);
+                                                        res = WLT_INVALID_ARGUMENT;
+                                                        break;
+                                                    }
+                                                    prtconfig->data.thresholds.low.temperature.value = thval;
                                                 }
                                                 break;
 
                                             case THRESH_SUBPARAM_TRIGGER:
                                                 {
-                                                    for (int j=0; j<TRD_TRIGGER_MAX; j++) {
+                                                    for (j=0; j<TRD_TRIGGER_MAX; j++) {
                                                         if (strcmp(value, threshold_trigger_types[j]) == 0) {
                                                             printf("Setting Low Temperature Threshold Trigger to '%s'\n", value);
                                                             prtconfig->data.thresholds.low.temperature.trigger = j;
                                                             break;
                                                         }
+                                                    }
+                                                    if(j == TRD_TRIGGER_MAX) {
+                                                        printf("Invalid Low Temperature Threshold Trigger value: %s\n", value);
+                                                        res = WLT_INVALID_ARGUMENT;
                                                     }
                                                 }
                                                 break;
@@ -565,20 +593,29 @@ wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value)
                                         {
                                             case THRESH_SUBPARAM_VALUE:
                                                 {
-                                                    float val = atof(value);
-                                                    printf("Setting Low Humidity Threshold to '%0.2f'\n", val);
-                                                    prtconfig->data.thresholds.low.humidity.value = val;
+                                                    thval = atof(value);
+                                                    printf("Setting Low Humidity Threshold to '%0.2f'\n", thval);
+                                                    if(thval < MIN_THR_HUM_VALUE || thval > MAX_THR_HUM_VALUE) {
+                                                        printf("Invalid Low Humidity Threshold value: %0.2f\n", thval);
+                                                        res = WLT_INVALID_ARGUMENT;
+                                                        break;
+                                                    }
+                                                    prtconfig->data.thresholds.low.humidity.value = thval;
                                                 }
                                                 break;
 
                                             case THRESH_SUBPARAM_TRIGGER:
                                                 {
-                                                    for (int j=0; j<TRD_TRIGGER_MAX; j++) {
+                                                    for (j=0; j<TRD_TRIGGER_MAX; j++) {
                                                         if (strcmp(value, threshold_trigger_types[j]) == 0) {
                                                             printf("Setting Low Humidity Threshold Trigger to '%s'\n", value);
                                                             prtconfig->data.thresholds.low.humidity.trigger = j;
                                                             break;
                                                         }
+                                                    }
+                                                    if(j == TRD_TRIGGER_MAX) {
+                                                        printf("Invalid Low Humidity Threshold Trigger value: %s\n", value);
+                                                        res = WLT_INVALID_ARGUMENT;
                                                     }
                                                 }
                                                 break;
