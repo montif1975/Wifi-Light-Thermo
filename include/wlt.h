@@ -67,6 +67,11 @@ typedef struct wlt_net_config {
 #define POLL_READ_TIME_MAX      63  // Maximum poll read sensor time in seconds (6 bits)
 #define POLL_READ_TIME_DFLT     30  // Default poll read sensor time in seconds
 
+#define MAX_THR_HUM_VALUE       100.0f
+#define MIN_THR_HUM_VALUE       0.0f
+#define MAX_THR_TEMP_VALUE      125.0f
+#define MIN_THR_TEMP_VALUE      -40.0f
+
 typedef union settings {
     uint16_t all_options;
     struct {
