@@ -1088,6 +1088,10 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
             }
 
             if (parse_result == WLT_SUCCESS) {
+
+                // Save the configuration
+                wlt_update_and_save_config(prtconfig,pconfig);
+
                 // Generate content reply
                 memset(con_state->result, 0, sizeof(con_state->result));
                 printf("Filling server content for request: %s with params: %s\n", request, params ? params : "NULL");
