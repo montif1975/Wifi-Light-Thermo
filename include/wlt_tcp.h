@@ -13,6 +13,7 @@
 #define HTTP_RESPONSE_HEADERS_IMAGE         "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: image/%s\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_HEADERS_JSON          "HTTP/1.1 %d OK\nContent-Length: %d\nContent-Type: application/%s\nConnection: close\r\n\r\n"
 
+// **** STYLE SHEET ****
 #define STYLE_CSS                           "body {\
 font-family: Arial, sans-serif;\
 background-color: #f4f6f8;\
@@ -114,6 +115,25 @@ color: rgb(0, 0, 255);\
 font-weight: bold;\
 }\r\n"
 
+#define STYLE_CSS_DARK                      "body{margin:0;background:#000;color:#0f0;font:48px monospace;\
+display:flex;align-items:center;justify-content:center;height:100vh}\
+#c{width:320px}\
+.r{display:flex;justify-content:space-between;margin:12px 0}\
+.l{color:#777;font-size:18px}\
+.v{font-weight:bold}\
+.d{color:#ffffff;font-size:18px;text-align:center;margin-top:20px}\
+.t{color:#ffffff;font-size:18px}\r\n"
+
+#define STYLE_CSS_LIGHT                     "body{margin:0;background:#ffffff;color:#0f0;font:48px monospace;\
+display:flex;align-items:center;justify-content:center;height:100vh}\
+#c{width:320px}\
+.r{display:flex;justify-content:space-between;margin:12px 0}\
+.l{color:#484848;font-size:18px}\
+.v{font-weight:bold}\
+.d{color:#000000;font-size:18px;text-align:center;margin-top:20px}\
+.t{color:#000000;font-size:18px}\r\n"
+
+// **** INFO PAGE ****
 #define INFO_REPLY_HEAD                     "<!DOCTYPE html>\
 <html lang=\"en\">\
 <head>\
@@ -141,12 +161,44 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 </body>\
 </html>"
 
-#define INFO_REPLAY_BODY_NOT_VALID         "<body>\
+#define INFO_REPLY_BODY_NOT_VALID         "<body>\
 <div class=\"info-container\">\
 <h2>%s</h2>\
 <div class=\"info-data\">\
 <p>Sensor not available or last data read is not valid!</p>\
 </div>\
+</div>\
+</body>\
+</html>"
+
+// **** HOME PAGE (replace INFO page)
+#define HOME_REPLY_HEAD                    "<!doctype html>\
+<html>\
+<head>\
+<meta charset=utf-8>\
+<meta http-equiv=refresh content=15>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\">\
+</head>"
+
+#define HOME_REPLY_BODY                    "<body>\
+<div id=c>\
+<h2 class=t>%s</h2>\
+<div class=r><span class=l>TEMP</span><span class=v>%.02f %s</span></div>\
+<div class=r><span class=l>HUM</span><span class=v>%.02f %%RH</span></div>\
+<div class=d id=datetime>\
+<h3 id=\"datetime\"></h3>\
+<script>\
+document.getElementById(\"datetime\").textContent = new Date().toLocaleString();\
+</script>\
+</div>\
+</div>\
+</body>\
+</html>"
+
+#define HOME_REPLY_BODY_NOT_VALID          "<body>\
+<div id=c>\
+<h2 class=t>%s</h2>\
+<div class=t>Sensor not available or last data read is not valid!</div>\
 </div>\
 </body>\
 </html>"
@@ -360,9 +412,13 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 #define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_NOT_IMPL_ERROR        "HTTP/1.1 501 Not implemented\nContent-Length: 0\nConnection: close\r\n\r\n"
 
+#define HTTP_NONE_URL                       "/"
 #define STYLE_URL                           "/style.css"
 #define STYLE_INFO_URL                      "/style_info.css"
+#define STYLE_HOME_DARK_URL                 "/style_dark.css"
+#define STYLE_HOME_LIGHT_URL                "/style_light.css"
 #define FAVICON_URL                         "/favicon.ico"
+#define HOME_URL                            "/home"
 #define INFO_URL                            "/info"
 #define SETTINGS_URL                        "/settings"
 #define SETTINGS_FORM_URL                   "/setparams"
@@ -387,8 +443,12 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 #define API_SET_THRESH_PARAMS_URL           API_BASE_URL API_VERS "/setthreshparams"
 
 enum http_req_page {
+    HTTP_NONE,
     HTTP_REQ_STYLE,
     HTTP_REQ_STYLE_INFO,
+    HTTP_REQ_STYLE_DARK,
+    HTTP_REQ_STYLE_LIGHT,
+    HTTP_REQ_HOME,
     HTTP_REQ_FAVICON,
     HTTP_REQ_INFO,
     HTTP_REQ_SETTINGS,

@@ -9,8 +9,12 @@ extern wlt_error_t parse_post_specific_body(char *body, int api_index);
 extern wlt_error_t parse_post_body(char *body, size_t content_length);
 
 static char *http_req_page_str[HTTP_REQ_MAX] = {
+    HTTP_NONE_URL,
     STYLE_URL,
     STYLE_INFO_URL,
+    STYLE_HOME_DARK_URL,
+    STYLE_HOME_LIGHT_URL,
+    HOME_URL,
     FAVICON_URL,
     INFO_URL,
     SETTINGS_URL,
@@ -294,6 +298,9 @@ static int fill_server_content(const char *request, const char *params, char *re
         // We have a page request
         printf("Page request found: %s\n", http_req_page_str[i]);
         switch(i) {
+            case HTTP_NONE:
+                break;
+
             case HTTP_REQ_STYLE:
                 // Copy the style sheet
                 len2copy = strlen(STYLE_CSS);
@@ -326,6 +333,71 @@ static int fill_server_content(const char *request, const char *params, char *re
                 }
                 break;
 
+            case HTTP_REQ_STYLE_DARK:
+                // Copy the style sheet
+                len2copy = strlen(STYLE_CSS_DARK);
+                if (len2copy >= max_result_len) {
+                    printf("Result buffer too small for style (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }
+                else {
+                    len += snprintf(result + len, max_result_len - len, STYLE_CSS_DARK);
+                }
+                if (len < 0) {
+                    printf("Error generating info content\n");
+                    return 0; // Error
+                }
+                break;
+
+            case HTTP_REQ_STYLE_LIGHT:
+                // Copy the style sheet
+                len2copy = strlen(STYLE_CSS_LIGHT);
+                if (len2copy >= max_result_len) {
+                    printf("Result buffer too small for style (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }
+                else {
+                    len += snprintf(result + len, max_result_len - len, STYLE_CSS_LIGHT);
+                }
+                if (len < 0) {
+                    printf("Error generating info content\n");
+                    return 0; // Error
+                }
+                break;
+
+            case HTTP_REQ_HOME:
+                // copy the info head
+                len += snprintf(result + len, max_result_len - len, HOME_REPLY_HEAD, "style_dark.css");
+                if (len < 0) {
+                    printf("Error generating info content\n");
+                    return 0; // Error
+                }
+                else if (len >= max_result_len) {
+                    printf("Result buffer too small for info head (len=%d, max_result_len=%zu)\n", len, max_result_len);
+                    return 0; // Error
+                }
+                // copy the info body
+                if (prtconfig->data.settings.options.data_valid == SENS_DATA_NOT_VALID) {
+                    // If data is not valid, show a message
+                    len += snprintf(result + len, max_result_len - len, HOME_REPLY_BODY_NOT_VALID, prtconfig->net_config.devicename);
+                } else {
+                    // Fill in the body with the sensor data
+                    len += snprintf(result + len, max_result_len - len, HOME_REPLY_BODY,
+                                    prtconfig->net_config.devicename,
+                                    (prtconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? prtconfig->data.temperature : C2F(prtconfig->data.temperature)),
+                                    (prtconfig->data.settings.options.t_format == T_FORMAT_CELSIUS ? "&degC" : "&degF"),
+                                    prtconfig->data.humidity);
+                }
+                if (len < 0) {
+                    printf("Error generating info content\n");
+                    return 0; // Error
+                }
+                else if (len >= max_result_len) {
+                    printf("Result buffer too small for info body (len=%d, max_result_len=%zu)\n", len, max_result_len);
+                    return 0; // Error
+                }
+            break;
+
             case HTTP_REQ_FAVICON:
                 // Copy the favicon icon
                 len2copy = favicon_ico_len;
@@ -357,7 +429,7 @@ static int fill_server_content(const char *request, const char *params, char *re
                 // copy the info body
                 if (prtconfig->data.settings.options.data_valid == SENS_DATA_NOT_VALID) {
                     // If data is not valid, show a message
-                    len += snprintf(result + len, max_result_len - len, INFO_REPLAY_BODY_NOT_VALID, prtconfig->net_config.devicename);
+                    len += snprintf(result + len, max_result_len - len, INFO_REPLY_BODY_NOT_VALID, prtconfig->net_config.devicename);
                 } else {
                     // Fill in the body with the sensor data
                     len += snprintf(result + len, max_result_len - len, INFO_REPLY_BODY,
