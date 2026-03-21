@@ -406,7 +406,7 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 
 #define API_INFO_REPLY                      "{\"T\":%.2f,\"TF\":\"%s\",\"H\":%.2f}"
 
-#define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" INFO_URL "\r\n\r\n"
+#define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" HOME_URL "\r\n\r\n"
 #define HTTP_RESPONSE_BAD_REQUEST           "HTTP/1.1 400 Bad Request\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_NOT_FOUND             "HTTP/1.1 404 Not Found\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\r\n\r\n"
@@ -442,7 +442,7 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 #define API_SET_SETTING_PARAMS_URL          API_BASE_URL API_VERS "/setsettingparams"
 #define API_SET_THRESH_PARAMS_URL           API_BASE_URL API_VERS "/setthreshparams"
 
-enum http_req_page {
+enum http_get_req {
     HTTP_NONE,
     HTTP_REQ_STYLE,
     HTTP_REQ_STYLE_INFO,
@@ -463,17 +463,19 @@ enum http_req_page {
     HTTP_REQ_SET_HIGH_HUM_FORM,
     HTTP_REQ_SET_LOW_HUM,
     HTTP_REQ_SET_LOW_HUM_FORM,
-    HTTP_REQ_MAX
-};
-
-enum http_req_api {
     HTTP_API_INFO,
     HTTP_API_GET_SETTINGS,
+    HTTP_GET_REQ_MAX
+};
+
+enum http_post_req {
+//    HTTP_API_INFO,
+//    HTTP_API_GET_SETTINGS,
     HTTP_API_SET_ALL_PARAMS,
     HTTP_API_SET_WIFI_PARAMS,
     HTTP_API_SET_SETTING_PARAMS,
     HTTP_API_SET_THRESH_PARAMS,
-    HTTP_API_MAX   
+    HTTP_POST_REQ_MAX   
 };
 
 typedef struct TCP_SERVER_T_ {

@@ -26,7 +26,8 @@ static char *api_settings_params[SETTINGS_MAX] = {
     "TF",
     "OF",
     "PT",
-    "TH"
+    "TH",
+    "WT"
 };
 
 static char *api_thresholds_params[THRESHOLDS_MAX] = {
@@ -298,6 +299,19 @@ wlt_error_t api_parse_settings(char *settings_params)
                                                 printf("Invalid Threshold Hysteresis value: %d\n", trd_hyst);
                                                 res = WLT_INVALID_ARGUMENT;
                                             }
+                                        }
+                                        break;
+
+                                    case SETTINGS_THEME:
+                                        printf("Setting Theme to '%s'\n", value);
+                                        // set theme
+                                        if (strcmp(value, "DARK") == 0) {
+                                            prtconfig->data.settings.options.theme = THEME_DARK;
+                                        } else if (strcmp(value, "LIGHT") == 0) {
+                                            prtconfig->data.settings.options.theme = THEME_LIGHT;
+                                        } else {
+                                            printf("Invalid Theme value: %s\n", value);
+                                            res = WLT_INVALID_ARGUMENT;
                                         }
                                         break;
 

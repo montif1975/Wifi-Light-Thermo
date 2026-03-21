@@ -7,7 +7,8 @@ The measured values can be accessed via a web server interface — either throug
 The device allows configuration of several parameters, including:  
 - The device name  
 - Temperature format: °C or °F  
-- Output format: TXT or CSV  
+- Output format: TXT or CSV
+- Theme of the home page (dark or light)  
 - Sensor polling interval  
 - Temperature and humidity thresholds to activate or deactivate predefined outputs, see [`Remarks`](#remarks).  
 
@@ -65,9 +66,16 @@ The simple web server implemented in the device serves this pages:
 
 | Page              | Available in AP mode | Available in STA mode |
 |-------------------|----------------------|-----------------------|
+| /home  (*)        |           YES        |        YES            |
 | /info             |           YES        |        YES            |
 | /settings         |           YES        |        NO             |
 | /advparams        |           YES        |        NO             |  
+
+`/home` is available in dark or light theme.  
+The dark theme is this:  
+![home](/resources/home_dark.jpg "home web page in dark mode")  
+The light theme is this:  
+![home](/resources/home_light.jpg "home web page in light mode")  
 
 The response to `/info` request is the following:  
 ![info](/resources/info.jpg "info web page response")  
@@ -114,9 +122,6 @@ where:
 - "C" = Celsius degree  
 - "F" = Fahrenheit degree  
 
-Here an example of the response to API request /api/v1/info  
-![api info](/resources/info_api.jpg "API info response")  
-
 ### /api/v1/settings  
 The `/api/v1/settings` is used to get all the configuration of the device.  
 The response's body is:  
@@ -134,7 +139,8 @@ The response's body is:
         "TF":"C",
         "OF":"CSV",
         "PT":30,
-        "TH":3
+        "TH":3,
+        "WT":"DARK"
     },
     "THRESH":{
         "HTT":{
@@ -156,10 +162,7 @@ The response's body is:
     }
 }
 ```  
-In the WIFI object the IP address, the netmask and the gateway value are assigned by the network when the device is in STA (station) mode.  
-
-Here an example of the response to API request /api/v1/settings  
-![api settings](/resources/settings_api.jpg "API settings response")    
+> In the WIFI object the IP address, the netmask and the gateway value are assigned by the network when the device is in STA (station) mode.  
 
 ### /api/v1/setallparams  
 The `/api/v1/setallparams` parse all the settings that finds in the body of the request.  
@@ -192,6 +195,7 @@ The `/api/v1/setsettingparams` body request is:
         "OF": "TXT" or "CSV", # output format
         "PT": 1..63, # polling time in s
         "TH": 1..7, # threshold Hysteresis
+        "WT": "DARK" or "LIGHT", # web page theme
     }
 }
 ```  
