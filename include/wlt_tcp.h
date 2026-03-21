@@ -124,7 +124,7 @@ display:flex;align-items:center;justify-content:center;height:100vh}\
 .d{color:#ffffff;font-size:18px;text-align:center;margin-top:20px}\
 .t{color:#ffffff;font-size:18px}\r\n"
 
-#define STYLE_CSS_LIGHT                     "body{margin:0;background:#ffffff;color:#0f0;font:48px monospace;\
+#define STYLE_CSS_LIGHT                     "body{margin:0;background:#ffffff;color:#0000ff;font:48px monospace;\
 display:flex;align-items:center;justify-content:center;height:100vh}\
 #c{width:320px}\
 .r{display:flex;justify-content:space-between;margin:12px 0}\

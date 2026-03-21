@@ -336,13 +336,6 @@ static int fill_server_content(const char *request, const char *params, char *re
 
     // find which request we have
     i = tcp_find_get_request(request);
-#if 0
-    for (i = 0; i < HTTP_REQ_MAX; i++) {
-        if (strncmp(request, http_req_page_str[i], strlen(http_req_page_str[i])) == 0) {
-            break;
-        }
-    }
-#endif       
     if(i < HTTP_GET_REQ_MAX) {
         // We have a page request
         printf("Page request found: %s\n", http_get_req_str[i]);
@@ -560,7 +553,7 @@ static int fill_server_content(const char *request, const char *params, char *re
                         }
                         param = strtok(NULL, "&");
                     }
-#if 1 //DEBUG
+#if DEBUG
                     printf("Parsed parameters: ssid=%s, pwd=%s, devname=%s, scale=%s, oform=%s\n", 
                            ssid ? ssid : "NULL", 
                            pwd ? pwd : "NULL", 
@@ -1149,7 +1142,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
 
             api_index = tcp_find_post_request(request);
             if (api_index < HTTP_POST_REQ_MAX) {
-                printf("Request matches API: %s\n", http_post_req_str[api_index]);
+                printf("Request matches POST: %s\n", http_post_req_str[api_index]);
             } else {
                 printf("Unsupported POST request: %s\n", request);
                 // send 404 Not Found
@@ -1354,7 +1347,6 @@ bool tcp_server_open(void *arg, const char *ap_name)
         return false;
     }
 
-//    err_t err = tcp_bind(pcb, IP_ANY_TYPE, TCP_PORT);
     err_t err = tcp_bind(pcb, &state->gw, TCP_PORT);
     if (err) {
         printf("failed to bind to port %d\n",TCP_PORT);
