@@ -9,14 +9,6 @@
 #include "include/dht20.h"
 
 /*
- * Function: C2F(temperature)
- * Convert Celsius to Fahrenheit scale
-*/
-float C2F(float temperature) {
-    return temperature * (9.0f / 5) + 32;
-}
-
-/*
  * Function: DHT20_init()
  * Check connection and verifiy if the sensor is inizialized
  */

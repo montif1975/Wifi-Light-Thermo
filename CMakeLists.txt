@@ -38,12 +38,15 @@ pico_sdk_init()
 add_executable(wlt
     wlt.c
     wlt_tcp.c
+    wlt_api.c
+    wlt_utils.c
     dht20.c
     eeprom_24LC256.c
     rgb.c
     favicon_ico.c
     dhcpserver/dhcpserver.c
     dnsserver/dnsserver.c
+    json/ecjp.c
 )
 
 pico_set_program_name(wlt "wlt")
@@ -65,6 +68,7 @@ target_include_directories(wlt PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts
         ${CMAKE_CURRENT_LIST_DIR}/dhcpserver
         ${CMAKE_CURRENT_LIST_DIR}/dnsserver
+        ${CMAKE_CURRENT_LIST_DIR}/json
 )
 
 

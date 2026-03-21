@@ -63,9 +63,16 @@ typedef struct wlt_net_config {
 #define SENS_AVAILABLE          1
 #define SENS_DATA_NOT_VALID     0
 #define SENS_DATA_VALID         1
+#define THEME_DARK              0
+#define THEME_LIGHT             1
 #define POLL_READ_TIME_MIN      1   // Minimum poll read sensor time in seconds (1 second)
 #define POLL_READ_TIME_MAX      63  // Maximum poll read sensor time in seconds (6 bits)
 #define POLL_READ_TIME_DFLT     30  // Default poll read sensor time in seconds
+
+#define MAX_THR_HUM_VALUE       100.0f
+#define MIN_THR_HUM_VALUE       0.0f
+#define MAX_THR_TEMP_VALUE      125.0f
+#define MIN_THR_TEMP_VALUE      -40.0f
 
 typedef union settings {
     uint16_t all_options;
@@ -77,16 +84,18 @@ typedef union settings {
         uint8_t trd_hyst    : 3; // Bit 8-10 - Number of consecutive read to trigger thresholds
         uint8_t sens_avail  : 1; // Bit 11 - Sensor availability: 0 = not available, 1 = available
         uint8_t data_valid  : 1; // Bit 12 - tell me if data read from sensor is valid: 0 = not valid, 1 = valid
-        uint8_t reserved    : 3; // Bit 13-15 - Reserved for future use
+        uint8_t theme       : 1; // Bit 13 - Web page theme: 0 = dark, 1 = light
+        uint8_t reserved    : 2; // Bit 14-15 - Reserved for future use
     } options;
 } settings_t;
 
-enum trd_trigger {
-    TRD_TRIGGER_NONE    = 0,     // No trigger
-    TRD_TRIGGER_HIGH    = 1,     // Trigger when value is up the threshold
-    TRD_TRIGGER_LOW     = 2,     // Trigger when value is below the threshold
-    TRD_TRIGGER_BOTH    = 3      // Trigger when value is up and below the threshold
-};
+typedef enum {
+    TRD_TRIGGER_NONE,   // No trigger
+    TRD_TRIGGER_HIGH,   // Trigger when value is up the threshold
+    TRD_TRIGGER_LOW,    // Trigger when value is below the threshold
+    TRD_TRIGGER_BOTH,   // Trigger when value is up and below the threshold
+    TRD_TRIGGER_MAX
+} trd_trigger_t;
 
 typedef struct trd {
     float   value;      // threshold value
@@ -138,5 +147,51 @@ typedef struct wlt_rgb_led {
     bool is_on; // LED state: true (1) = on, false (0) = off
     uint64_t last_change; // Last time the LED color was changed
 } wlt_rgb_led_t;
+
+// API JSON parameters enums
+typedef struct api_parse_key 
+{
+    char *key;
+    wlt_error_t (*parse_func)(char *value);
+} api_parse_key_t;
+
+typedef enum {
+    PARAMS_WIFI,
+    PARAMS_SETTINGS,
+    PARAMS_THRESHOLDS,
+    PARAMS_MAX
+} params_type_t;
+
+// TODO: add ip, netmask, gateway parameters when in AP mode
+typedef enum {
+    WIFI_DEVICENAME,
+    WIFI_MODE,
+    WIFI_SSID,
+    WIFI_PASS,
+    WIFI_PARAM_MAX
+} wifi_param_t;\
+
+typedef enum {
+    SETTINGS_TEMP_FORMAT,
+    SETTINGS_OUTPUT_FORMAT,
+    SETTINGS_POLL_TIME,
+    SETTINGS_TRD_HYSTERIS,
+    SETTINGS_THEME,
+    SETTINGS_MAX
+} settings_param_t;
+
+typedef enum {
+    THRESHOLDS_HIGH_TEMP,
+    THRESHOLDS_HIGH_HUM,
+    THRESHOLDS_LOW_TEMP,
+    THRESHOLDS_LOW_HUM,
+    THRESHOLDS_MAX
+} thresholds_param_t;
+
+typedef enum {
+    THRESH_SUBPARAM_VALUE,
+    THRESH_SUBPARAM_TRIGGER,
+    THRESH_SUBPARAM_MAX
+} threshold_subparam_t;
 
 #endif // WLT_H

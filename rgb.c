@@ -3,7 +3,7 @@
 #include "include/rgb.h"
 
 // Each color is {R, G, B} with 1 = ON, 0 = OFF
-const bool rgb_colors[][3] = {
+const bool rgb_colors[RGB_COLOR_MAX][3] = {
     {1, 0, 0}, // Red
     {0, 1, 0}, // Green
     {0, 0, 1}, // Blue
@@ -14,7 +14,16 @@ const bool rgb_colors[][3] = {
     {0, 0, 0}  // Off
 };
 
-const int num_colors = sizeof(rgb_colors) / sizeof(rgb_colors[0]);
+char *rgb_colors_names[RGB_COLOR_MAX] = {
+    "Red",
+    "Green",
+    "Blue",
+    "Yellow",
+    "Magenta",
+    "Cyan",
+    "White",
+    "Off"
+};
 
 /*
 * Function: rgb_init()
@@ -61,7 +70,7 @@ void rgb_set_color(bool r, bool g, bool b)
 */
 void rgb_set_led_color(int index)
 {
-    if (index < 0 || index >= num_colors) {
+    if (index < 0 || index >= RGB_COLOR_MAX) {
         printf("Invalid RGB color index: %d\n", index);
         return;
     }

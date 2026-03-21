@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sensor info</title>
+
+<style>
+
+body{
+  font-family: Arial;
+  background:#111;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
+}
+
+.info-container{
+  background:black;
+  padding:25px;
+  border-radius:10px;
+  width:420px;
+  box-shadow:0 0 20px rgba(0,255,0,0.2);
+}
+
+h2{
+  text-align:center;
+  color:#aaa;
+  margin-bottom:25px;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  margin:15px 0;
+}
+
+.label{
+  color:#888;
+  font-size:1.2rem;
+}
+
+.value{
+  font-family:Consolas,monospace;
+  font-size:2.6rem;
+  font-weight:bold;
+}
+
+#datetime{
+  text-align:center;
+  margin-top:20px;
+  color:#6a7cff;
+}
+
+canvas{
+  margin-top:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="info-container">
+
+<h2>WiFi Sensor</h2>
+
+<div class="row">
+<span class="label">Temperature</span>
+<span class="value" id="temp">24.5 °C</span>
+</div>
+
+<div class="row">
+<span class="label">Humidity</span>
+<span class="value" id="hum">60 %</span>
+</div>
+
+<canvas id="chart" width="380" height="120"></canvas>
+
+<div id="datetime"></div>
+
+</div>
+
+<script>
+
+// storico valori
+let tempHistory=[]
+let humHistory=[]
+
+// simulazione lettura sensore
+function readSensor(){
+
+// qui potrai mettere fetch() dal sensore
+let temp=20+Math.random()*10
+let hum=40+Math.random()*30
+
+updateValues(temp,hum)
+
+}
+
+function updateValues(temp,hum){
+
+document.getElementById("temp").textContent=temp.toFixed(1)+" °C"
+document.getElementById("hum").textContent=Math.round(hum)+" %"
+
+colorTemp(temp)
+colorHum(hum)
+
+tempHistory.push(temp)
+humHistory.push(hum)
+
+if(tempHistory.length>30){
+tempHistory.shift()
+humHistory.shift()
+}
+
+drawChart()
+
+}
+
+function colorTemp(t){
+
+let el=document.getElementById("temp")
+
+if(t<18) el.style.color="#00bfff"
+else if(t<27) el.style.color="#00ff00"
+else el.style.color="#ff4040"
+
+}
+
+function colorHum(h){
+
+let el=document.getElementById("hum")
+
+if(h<40) el.style.color="#ffaa00"
+else if(h<70) el.style.color="#00ffcc"
+else el.style.color="#4080ff"
+
+}
+
+function drawChart(){
+
+let c=document.getElementById("chart")
+let ctx=c.getContext("2d")
+
+ctx.clearRect(0,0,c.width,c.height)
+
+ctx.beginPath()
+
+for(let i=0;i<tempHistory.length;i++){
+
+let x=i*(c.width/30)
+let y=c.height-(tempHistory[i]-15)*6
+
+if(i==0) ctx.moveTo(x,y)
+else ctx.lineTo(x,y)
+
+}
+
+ctx.strokeStyle="#00ff00"
+ctx.stroke()
+
+}
+
+setInterval(readSensor,5000)
+readSensor()
+
+setInterval(()=>{
+document.getElementById("datetime").textContent=new Date().toLocaleString()
+},1000)
+
+</script>
+
+</body>
+</html>

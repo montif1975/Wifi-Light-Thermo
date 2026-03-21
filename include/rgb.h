@@ -23,4 +23,6 @@ void rgb_init(void);
 void rgb_set_color(bool r, bool g, bool b);
 void rgb_set_led_color(int index);
 
+extern char *rgb_colors_names[RGB_COLOR_MAX];
+
 #endif // RGB_H
