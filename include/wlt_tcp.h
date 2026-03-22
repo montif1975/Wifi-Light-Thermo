@@ -115,6 +115,26 @@ color: rgb(0, 0, 255);\
 font-weight: bold;\
 }\r\n"
 
+#define STYLE_FORM_DARK         ":root{--bg: #121212;--fg: #e0e0e0;--border: #444;--accent: #00f;}\
+body{font-family: Arial, sans-serif;background: var(--bg);color: var(--fg);margin: 10px;font-size: 14px;}\
+.container{max-width: 320px;margin: auto;}\
+.row{display: flex;align-items: center;margin-bottom: 8px;}\
+label{flex: 1;}\
+input[type=\"text\"],input[type=\"password\"]{flex: 2;padding: 4px;border: 1px solid var(--border);background: var(--bg);color: var(--fg);}\
+.inline{display: flex;gap: 10px;margin-bottom: 8px;}\
+button{width: 100%;padding: 6px;background: var(--accent);color: white;border: none;}\
+hr {border: none;border-top: 1px solid var(--border);}\r\n"
+
+#define STYLE_FORM_LIGHT        ":root{--bg: #ffffff;--fg: #111;--border: #ccc;--accent: #00f;}\
+body{font-family: Arial, sans-serif;background: var(--bg);color: var(--fg);margin: 10px;font-size: 14px;}\
+.container{max-width: 320px;margin: auto;}\
+.row{display: flex;align-items: center;margin-bottom: 8px;}\
+label{flex: 1;}\
+input[type=\"text\"],input[type=\"password\"]{flex: 2;padding: 4px;border: 1px solid var(--border);background: var(--bg);color: var(--fg);}\
+.inline{display: flex;gap: 10px;margin-bottom: 8px;}\
+button{width: 100%;padding: 6px;background: var(--accent);color: white;border: none;}\
+hr{border: none;border-top: 1px solid var(--border);}\r\n"
+
 #define STYLE_CSS_DARK                      "body{margin:0;background:#000;color:#0f0;font:48px monospace;\
 display:flex;align-items:center;justify-content:center;height:100vh}\
 #c{width:320px}\
@@ -195,7 +215,7 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 </body>\
 </html>"
 
-#define HOME_REPLY_BODY_NOT_VALID          "<body>\
+#define HOME_REPLY_BODY_NOT_VALID           "<body>\
 <div id=c>\
 <h2 class=t>%s</h2>\
 <div class=t>Sensor not available or last data read is not valid!</div>\
@@ -208,39 +228,44 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 <html lang=\"en\">\
 <head>\
 <meta charset=\"UTF-8\">\
-<title>Config Form</title>\
-<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\
+<title>Settings</title>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\">\
 </head>\
 <body>\
-<div class=\"form-container\">\
-<h2>Wifi Sensor Configuration</h2>\
-<form action=\"/setparams\" method=\"get\">\
-<h3>Wifi config (STA mode)</h3>\
+<div class=\"container\">\
+<h3>Wifi Config (STA mode)</h3>"
+
+#define SETTINGS_REPLY_FORM_WIFI            "<form action=\"/setparams\" method=\"get\">\
+<div class=\"row\">\
+<label>SSID</label>\
+<input type=\"text\" name=\"ssid\" value=\"%s\">\
+</div>\
+<div class=\"row\">\
+<label>Password</label>\
+<input type=\"password\" name=\"pwd\" value=\"%s\">\
+</div>\
+<div class=\"row\">\
+<label>Device Name</label>\
+<input type=\"text\" name=\"devname\" value=\"%s\">\
+</div>\
+<hr>\
+<h3>Sensor</h3>"
+
+#define SETTINGS_REPLY_FORM_SENSOR          "<div>Temperarure format:</div>\
+<div class=\"inline\">\
+<label><input type=\"radio\" name=\"scale\" value=\"C\" %s> C</label>\
+<label><input type=\"radio\" name=\"scale\" value=\"F\" %s> F</label>\
+</div>\
+<div>Output Format:</div>\
+<div class=\"inline\">\
+<label><input type=\"radio\" name=\"oform\" value=\"TXT\" %s> TXT</label>\
+<label><input type=\"radio\" name=\"oform\" value=\"CSV\" %s> CSV</label>\
+</div>\
 <hr>"
 
-#define SETTINGS_REPLY_FORM_WIFI            "<label for=\"ssid\">SSID</label>\
-<input type=\"text\" id=\"ssid\" name=\"ssid\" value=\"%s\">\
-<label for=\"pwd\">Password</label>\
-<input type=\"password\" id=\"pwd\" name=\"pwd\" value=\"%s\">\
-<label for=\"devname\">Device Name</label>\
-<input type=\"text\" id=\"devname\" name=\"devname\" value=\"%s\">\
-<h3>Sensor config</h3>\
-<hr>\
-<div class=\"sc\">"
-
-#define SETTINGS_REPLY_FORM_SENSOR          "<p>Temperature displayed in:</p>\
-<label><input type=\"radio\" name=\"scale\" value=\"C\" %s>&degC</label>\
-<label><input type=\"radio\" name=\"scale\" value=\"F\" %s>&degF</label>\
-<p>Output format:</p>\
-<label><input type=\"radio\" name=\"oform\" value=\"TXT\" %s>TXT</label>\
-<label><input type=\"radio\" name=\"oform\" value=\"CSV\" %s>CSV</label>"
-
-#define SETTINGS_REPLY_FOOTER               "</div>\
-<hr>\
-<input type=\"submit\" value=\"Save\">\
+#define SETTINGS_REPLY_FOOTER               "<button type=\"submit\">Save</button>\
 </form>\
-<h2>Advanced Settings</h2>\
-<p>Advanced settings are available <a href=\"/advparams\">here</a></p>\
+<p><a href=\"/advparams\">Advanced Settings</a></p>\
 </div>\
 </body>\
 </html>"
@@ -414,6 +439,8 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 
 #define HTTP_NONE_URL                       "/"
 #define STYLE_URL                           "/style.css"
+#define STYLE_FORM_DARK_URL                 "/style_form_dark.css"
+#define STYLE_FORM_LIGHT_URL                "/style_form_light.css"
 #define STYLE_INFO_URL                      "/style_info.css"
 #define STYLE_HOME_DARK_URL                 "/style_dark.css"
 #define STYLE_HOME_LIGHT_URL                "/style_light.css"
@@ -445,6 +472,8 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 enum http_get_req {
     HTTP_NONE,
     HTTP_REQ_STYLE,
+    HTTP_REQ_STYLE_FORM_DARK,
+    HTTP_REQ_STYLE_FORM_LIGHT,
     HTTP_REQ_STYLE_INFO,
     HTTP_REQ_STYLE_DARK,
     HTTP_REQ_STYLE_LIGHT,

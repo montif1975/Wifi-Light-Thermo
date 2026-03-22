@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Settings</title>
+<link rel="stylesheet" type="text/css" href="style_l.css">
+</head>
+<body>
+<div class="container">
+<h3>Wifi Config (STA mode)</h3>
+<form action="/setparams" method="get">
+<div class="row">
+<label>SSID</label>
+<input type="text" name="ssid" value="%s">
+</div>
+<div class="row">
+<label>Password</label>
+<input type="password" name="pwd" value="%s">
+</div>
+<div class="row">
+<label>Device Name</label>
+<input type="text" name="devname" value="%s">
+</div>
+<hr>
+<h3>Sensor</h3>
+<div>Temp:</div>
+<div class="inline">
+<label><input type="radio" name="scale" value="C" %s> C</label>
+<label><input type="radio" name="scale" value="F" %s> F</label>
+</div>
+<div>Format:</div>
+<div class="inline">
+<label><input type="radio" name="oform" value="TXT" %s> TXT</label>
+<label><input type="radio" name="oform" value="CSV" %s> CSV</label>
+</div>
+<hr>
+<button type="submit">Save</button>
+</form>
+<p><a href="/advparams">Advanced</a></p>
+</div>
+</body>
+</html>

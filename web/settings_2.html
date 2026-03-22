@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Config Form</title>
+
+<style>
+:root {
+  --bg: #ffffff;
+  --fg: #111;
+  --border: #ccc;
+  --accent: #007acc;
+}
+
+/* Dark automatico */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --fg: #e0e0e0;
+    --border: #444;
+    --accent: #4da3ff;
+  }
+}
+
+/* Override manuale */
+body.dark {
+  --bg: #121212;
+  --fg: #e0e0e0;
+  --border: #444;
+  --accent: #4da3ff;
+}
+
+body.light {
+  --bg: #ffffff;
+  --fg: #111;
+  --border: #ccc;
+  --accent: #007acc;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  margin: 10px;
+  font-size: 14px;
+}
+
+.container {
+  max-width: 340px;
+  margin: auto;
+}
+
+/* Header con toggle */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggle {
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+}
+
+/* Righe compatte */
+.row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+label {
+  flex: 1;
+}
+
+input[type="text"],
+input[type="password"] {
+  flex: 2;
+  padding: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Effetto moderno leggero */
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Radio inline */
+.inline {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 7px;
+  background: var(--accent);
+  color: white;
+  border: none;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 10px 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<div class="header">
+  <h3>Config</h3>
+  <div class="toggle" onclick="toggleTheme()">☀️/🌙</div>
+</div>
+
+<form action="/setparams" method="get">
+
+<div class="row">
+  <label>SSID</label>
+  <input type="text" name="ssid" value="%s">
+</div>
+
+<div class="row">
+  <label>Password</label>
+  <input type="password" name="pwd" value="%s">
+</div>
+
+<div class="row">
+  <label>Device</label>
+  <input type="text" name="devname" value="%s">
+</div>
+
+<hr>
+
+<b>Sensor</b>
+
+<div>Temp:</div>
+<div class="inline">
+  <label><input type="radio" name="scale" value="C" %s> C</label>
+  <label><input type="radio" name="scale" value="F" %s> F</label>
+</div>
+
+<div>Format:</div>
+<div class="inline">
+  <label><input type="radio" name="oform" value="TXT" %s> TXT</label>
+  <label><input type="radio" name="oform" value="CSV" %s> CSV</label>
+</div>
+
+<hr>
+
+<button type="submit">Save</button>
+
+</form>
+
+<p><a href="/advparams">Advanced</a></p>
+
+</div>
+
+<script>
+function toggleTheme() {
+  var b = document.body;
+  if (b.classList.contains("dark")) {
+    b.classList.remove("dark");
+    b.classList.add("light");
+  } else {
+    b.classList.remove("light");
+    b.classList.add("dark");
+  }
+}
+</script>
+
+</body>
+</html>

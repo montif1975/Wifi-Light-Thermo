@@ -9,8 +9,9 @@ The device allows configuration of several parameters, including:
 - Temperature format: °C or °F  
 - Output format: TXT or CSV
 - Theme of the home page (dark or light)  
-- Sensor polling interval  
-- Temperature and humidity thresholds to activate or deactivate predefined outputs, see [`Remarks`](#remarks).  
+- Sensor polling interval
+- Temperature or humidity associated with the output  
+- Temperature and humidity thresholds to activate or deactivate associated outputs, see [`Remarks`](#remarks).  
 
 You can also set the SSID and password to connect the device to a desired WiFi network.  
 All configuration settings are stored in EEPROM memory connected via the I2C bus: I use a memory add-on available in my project [addon_eeprom_i2c](https://github.com/montif1975/addon_eeprom_i2c).  
@@ -18,30 +19,35 @@ The device's WiFi mode — Access Point (AP) or Station (STA) — is selected ba
 
 To know the working status of the device, I added a RGB led that shows these colors according to the status:  
 
-| LED COLOR | Type   | Status of device |
-|---------- |--------|------------------|
-| RED       | SOLID  | BOOT IN PROGRESS |
-| RED       | BLINK  | GENERIC ERROR    |
-| GREEN     | BLINK  | RUN IN STA MODE  |
-| BLUE      | BLINK  | RUN IN AP MODE   |
-| YELLOW    | SOLID  | WIFI FAIL        |  
+| LED COLOR | Type  | Status of device |
+|---------- |-------|------------------|
+| Red       | Solid | BOOT IN PROGRESS |
+| Red       | Blink | GENERIC ERROR    |
+| Green     | Blink | RUN IN STA MODE  |
+| Blue      | Blink | RUN IN AP MODE   |
+| Yellow    | Solid | WIFI FAIL        |  
 
 Sensor readings are always available, but configuration is only possible when the device is operating in Access Point mode.  
 
 ## Hardware configuration  
 
 In the project I used the Raspberry Pi Pico W with RP2040 microcontroller and Infineon CYW43439 Wifi and Bluetooth chip, see the device datasheet as reference.  
-The temperature sensor is connected to the I2C channel 0 using:  
-- SDA on GPIO 8  
-- SCL on GPIO 9  
+The GPIO used in the code are indicated in the following table.  
 
-The EEPROM flash memory is connected to the I2C channel 1 using:  
-- SDA on GPIO 14  
-- SCL on GPIO 15  
-
-The UART0 is used to transmitt the measured values; the pin used are:  
-- UART TX on GPIO 0  
-- UART RX on GPIO 1  
+|       FUNCTION        | SIGNAL    | GPIO  |
+|-----------------------|-----------|-------|
+| Temperature sensor    | SDA       |   8   |
+|                       | SCL       |   9   |
+| EEPROM flash memory   | SDA       |   14  |
+|                       | SCL       |   15  |
+| UART0 (log)           | TX        |   0   |
+|                       | RX        |   1   |
+| Wifi mode selector    | IN        |   22  |
+| RGB Led green         | OUT       |   3   |
+| RGB Led red           | OUT       |   4   |
+| RGB Led blue          | OUT       |   5   |
+| Output 1              | OUT       |   6   |
+| Output 2              | OUT       |   7   |
 
 The GPIO22 is used to setup the wifi mode according to these values:  
 - if GPIO 22 is high the device works in Station Mode (it needs to have a valid SSID and password to connect to the wifi network).  
@@ -49,11 +55,6 @@ The GPIO22 is used to setup the wifi mode according to these values:
 
 In Access Point Mode, **the default network SSID is "PICOW-WIFI" and the password is "PicoWifiPass"**.  
 The default IP address of the device is **192.168.8.1** and it acts as DHCP server for up to 4 clients.  
-
-The RGB LED is connected to the following GPIOs:  
-- Led GREEN on GPIO 3  
-- Led RED on GPIO 4  
-- Led BLU on GPIO 5  
 
 Depending on the LED used, it is necessary to add resistors between the LED and the Pico PIN to limit the current.  
 I used the AZDelivery KY-009 RGB LED.  

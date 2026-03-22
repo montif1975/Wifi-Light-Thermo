@@ -317,6 +317,22 @@ void wlt_configure_gpio_select_wifi_mode()
 }
 
 /*
+ * Function: wlt_outputs_init()
+ * Description: This function initializes the GPIO pins for the outputs.
+*/
+void wlt_outputs_init(void) 
+{
+    // Initialize GPIO pins for outputs
+    gpio_init(GPIO_OUTPUT_1);
+    gpio_set_dir(GPIO_OUTPUT_1, GPIO_OUT);
+
+    gpio_init(GPIO_OUTPUT_2);
+    gpio_set_dir(GPIO_OUTPUT_2, GPIO_OUT);
+
+    return;
+}
+
+/*
 * Function: wlt_check_wifi_mode()
 * Description: This function checks the GPIO to select the wifi mode.
 * Parameters: config - pointer to the runtime configuration.
@@ -544,6 +560,7 @@ int main()
     i2c_eeprom_init();
     wlt_init_port_sensor();
     wlt_init_uart();
+    wlt_outputs_init();
     rgb_init();
 
 #if DEBUG

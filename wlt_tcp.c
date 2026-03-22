@@ -11,6 +11,8 @@ extern wlt_error_t parse_post_body(char *body, size_t content_length);
 static char *http_get_req_str[HTTP_GET_REQ_MAX] = {
     HTTP_NONE_URL,
     STYLE_URL,
+    STYLE_FORM_DARK_URL,
+    STYLE_FORM_LIGHT_URL,
     STYLE_INFO_URL,
     STYLE_HOME_DARK_URL,
     STYLE_HOME_LIGHT_URL,
@@ -189,7 +191,11 @@ static int build_req_settings_form(char *result, size_t max_result_len)
         return 0; // Error
     }
 
-    len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_HEAD);        
+    if (prtconfig->data.settings.options.theme == THEME_DARK) {
+        len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_HEAD, STYLE_FORM_DARK_URL);
+    } else {
+        len2copy = snprintf(result + len, max_result_len - len, SETTINGS_REPLY_HEAD, STYLE_FORM_LIGHT_URL);
+    }
     if ((len2copy > 0) && (len2copy < max_result_len)) {
         len += len2copy;
     } else {
@@ -359,6 +365,38 @@ static int fill_server_content(const char *request, const char *params, char *re
                 }
                 break;
 
+            case HTTP_REQ_STYLE_FORM_DARK:
+                // Copy the style sheet
+                len2copy = strlen(STYLE_FORM_DARK);
+                if (len2copy >= max_result_len) {
+                    printf("Result buffer too small for style (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }
+                else {
+                    len += snprintf(result + len, max_result_len - len, STYLE_FORM_DARK);
+                }
+                if (len < 0) {
+                    printf("Error generating info content\n");
+                    return 0; // Error
+                }
+                break;
+
+            case HTTP_REQ_STYLE_FORM_LIGHT:
+                // Copy the style sheet for settings form
+                len2copy = strlen(STYLE_FORM_LIGHT);
+                if (len2copy >= max_result_len) {
+                    printf("Result buffer too small for style form (len2copy=%d, max_result_len=%zu)\n", len2copy, max_result_len);
+                    return 0; // Error
+                }
+                else {
+                    len += snprintf(result + len, max_result_len - len, STYLE_FORM_LIGHT);
+                }
+                if (len < 0) {
+                    printf("Error generating info content\n");
+                    return 0; // Error
+                }
+                break;
+
             case HTTP_REQ_STYLE_INFO:
                 // Copy the style sheet for info page
                 len2copy = strlen(STYLE_INFO_CSS);
@@ -500,7 +538,7 @@ static int fill_server_content(const char *request, const char *params, char *re
                 break;
 
             case HTTP_REQ_SETTINGS:
-#if DEBUG
+#if 1 //DEBUG
                 // copy the settings form (fill in different step to check the buffer size)
                 len = build_req_settings_form(result, max_result_len);
 #else
@@ -1043,7 +1081,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
             } else if (http_req_index < HTTP_GET_REQ_MAX) {
                 printf("Request matches page: %s\n", http_get_req_str[http_req_index]);
             } else {
-                printf("Unsupported HTTP request: %s\n", request);
+                printf("Unsupported HTTP request: %s (http_req_index: %d)\n", request, http_req_index);
                 // send 404 Not Found
                 con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_NOT_FOUND);
                 err = tcp_write(pcb, con_state->headers, con_state->header_len, 0);

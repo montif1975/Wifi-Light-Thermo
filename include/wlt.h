@@ -23,6 +23,8 @@
 #define WIFI_DEFAULT_DEVICENAME             "WiFi Sensor"
 
 #define GPIO_SELECT_WIFI_MODE               22
+#define GPIO_OUTPUT_1                       6
+#define GPIO_OUTPUT_2                       7
 
 #define RGB_LED_ON_BOOT                     RGB_COLOR_RED
 #define RGB_LED_ON_FAIL                     (RGB_COLOR_RED | RGB_BLINK_OPT)
