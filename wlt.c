@@ -206,7 +206,8 @@ void wlt_update_config(wlt_run_time_config_t *rt_config, wlt_config_data_t *conf
     strncpy(config->wifi_pass, rt_config->net_config.wifi_pass, sizeof(config->wifi_pass) - 1);
     config->wifi_pass[sizeof(config->wifi_pass) - 1] = '\0'; // Ensure null termination
     config->settings.all_options = rt_config->data.settings.all_options;
-    config->thresholds = rt_config->data.thresholds;
+    memcpy((void *)&(config->outputs[0]),(void *)&(rt_config->data.outputs[0]), sizeof(outputs_t));
+    memcpy((void *)&(config->outputs[1]), (void *)&(rt_config->data.outputs[1]), sizeof(outputs_t));
     // Copy the signature (includes \0 at the end)
     strncpy(config->signature, EEPROM_CTRL_WORD, EEPROM_CTRL_WORD_LEN);
  
@@ -233,7 +234,9 @@ void wlt_load_config(wlt_run_time_config_t *rt_config, wlt_config_data_t *config
     strncpy(rt_config->net_config.wifi_pass, config->wifi_pass, sizeof(rt_config->net_config.wifi_pass) - 1);
     rt_config->net_config.wifi_pass[sizeof(rt_config->net_config.wifi_pass) - 1] = '\0'; // Ensure null termination
     rt_config->data.settings.all_options = config->settings.all_options;
-    rt_config->data.thresholds = config->thresholds; 
+
+    memcpy((void *)&(rt_config->data.outputs[0]),(void *)&(config->outputs[0]), sizeof(outputs_t));
+    memcpy((void *)&(rt_config->data.outputs[1]), (void *)&(config->outputs[1]), sizeof(outputs_t));
 
     return;
 }
@@ -285,20 +288,20 @@ void wlt_init_run_time_config(wlt_run_time_config_t *config)
     config->data.humidity = 0.0f; // Initialize humidity
     config->data.pressure = 0.0f; // Initialize pressure
 
-    config->data.thresholds.high.temperature.value = 30.0f; // Default high temperature threshold
-    config->data.thresholds.high.temperature.trigger = TRD_TRIGGER_NONE; // Trigger when temperature is above the threshold
-    config->data.thresholds.low.temperature.value = 15.0f; // Default low temperature threshold
-    config->data.thresholds.low.temperature.trigger = TRD_TRIGGER_NONE; // Trigger when temperature is below the threshold
+    config->data.outputs[0].data_type = WLT_DATA_TYPE_TEMP; // Initialize output 1 type to TEMPERATURE
+    config->data.outputs[0].gpio_num = GPIO_OUTPUT_1; // Initialize output 1 GPIO number to GPIO_OUTPUT_1
+    config->data.outputs[0].threshold = 0.0f; // Initialize output 1 threshold to 0
+    config->data.outputs[0].trigger = TRD_TRIGGER_HIGH; // Initialize output 1 trigger to high (output will be triggered when the temperature is above the threshold)
 
-    config->data.thresholds.high.humidity.value = 70.0f; // Default high humidity threshold
-    config->data.thresholds.high.humidity.trigger = TRD_TRIGGER_NONE; // Trigger when humidity is above the threshold
-    config->data.thresholds.low.humidity.value = 30.0f; // Default low humidity threshold
-    config->data.thresholds.low.humidity.trigger = TRD_TRIGGER_NONE; // Trigger when humidity is below the threshold
+    config->data.outputs[1].data_type = WLT_DATA_TYPE_HUMIDITY; // Initialize output 2 type to HUMIDITY
+    config->data.outputs[1].gpio_num = GPIO_OUTPUT_2; // Initialize output 2 GPIO number to GPIO_OUTPUT_2
+    config->data.outputs[1].threshold = 0.0f; // Initialize output 2 threshold to 0
+    config->data.outputs[1].trigger = TRD_TRIGGER_HIGH; // Initialize output 2 trigger to high (output will be triggered when the humidity is above the threshold)
 
-    config->data.thresholds.high.pressure.value = 1020.0f; // Default high pressure threshold
-    config->data.thresholds.high.pressure.trigger = TRD_TRIGGER_NONE; // Trigger when pressure is above the threshold
-    config->data.thresholds.low.pressure.value = 980.0f; // Default low pressure threshold
-    config->data.thresholds.low.pressure.trigger = TRD_TRIGGER_NONE; // Trigger when pressure is below the threshold
+    config->outputs_rt[0].gpio_state = false; // Initialize GPIO output state to false
+    config->outputs_rt[0].counter = 0; // Initialize counter to 0
+    config->outputs_rt[1].gpio_state = false; // Initialize GPIO output state to false
+    config->outputs_rt[1].counter = 0; // Initialize counter to 0
 
     return;
 }

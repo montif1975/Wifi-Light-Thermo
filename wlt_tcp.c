@@ -740,32 +740,20 @@ static int fill_server_content(const char *request, const char *params, char *re
                         "TH":3,
                         "WT":"DARK"
                     },
-                    "THRESH":{
-                        "HTT":{
-                            "VAL":20,
+                    "OUTS": [
+                        {
+                            "GPIO": 6,
+                            "DT":"T",
+                            "TH":25.5,
                             "TR":"H"
                         },
-                        "HTH":{
-                            "VAL":20,
+                        {
+                            "GPIO": 7,
+                            "DT":"H",
+                            "TH":55.0,
                             "TR":"H"
-                        },
-                        "HTP":{
-                            "VAL":20,
-                            "TR":"H"
-                        },
-                        "LTT":{
-                            "VAL":20,
-                            "TR":"L"
-                        },
-                        "LTH":{
-                            "VAL":20,
-                            "TR":"L"
-                        },
-                        "LTP":{
-                            "VAL":20,
-                            "TR":"NONE"
                         }
-                    }
+                    ]
                     }                   
                 */
                 if (prtconfig == NULL) {
@@ -824,154 +812,48 @@ static int fill_server_content(const char *request, const char *params, char *re
                     printf("Error generating info content\n");
                     return 0; // Error
                 }
-                // Add thresholds high
-                memset(treshold_trigger, 0, sizeof(treshold_trigger));
-                switch(prtconfig->data.thresholds.high.temperature.trigger) {
-                    case TRD_TRIGGER_HIGH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
-                        break;
-                    case TRD_TRIGGER_LOW:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
-                        break;
-                    case TRD_TRIGGER_BOTH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
-                        break;
-                    case TRD_TRIGGER_NONE:
-                    default:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
-                        break;
-                }
+                // Add outputs
                 len += snprintf(result + len,
                                 max_result_len - len,
-                                "\"THRESH\":{\"HTT\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
-                                prtconfig->data.thresholds.high.temperature.value,
-                                treshold_trigger);
-                if ((len < 0) || (max_result_len - len) <= 0) {
+                                "\"OUTS\":[");
+                if((len < 0) || (max_result_len - len) <= 0) {
                     printf("Error generating info content\n");
                     return 0; // Error
                 }
-                memset(treshold_trigger, 0, sizeof(treshold_trigger));
-                switch(prtconfig->data.thresholds.high.humidity.trigger) {
-                    case TRD_TRIGGER_HIGH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
-                        break;
-                    case TRD_TRIGGER_LOW:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
-                        break;
-                    case TRD_TRIGGER_BOTH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
-                        break;
-                    case TRD_TRIGGER_NONE:
-                    default:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
-                        break;
+                for(int i = 0; i < OUTPUT_GPIO_MAX; i++) {
+                    char *dt_str = NULL;
+                    switch(prtconfig->data.outputs[i].data_type) {
+                        case WLT_DATA_TYPE_TEMP:
+                            dt_str = "T";
+                            break;
+                        case WLT_DATA_TYPE_HUMIDITY:
+                            dt_str = "H";
+                            break;
+                        case WLT_DATA_TYPE_PRESSURE:
+                            dt_str = "P";
+                            break;
+                        case WLT_DATA_TYPE_NULL:
+                        default:
+                            dt_str = "UNK";
+                            break;
+                    }
+                    len += snprintf(result + len,
+                                    max_result_len - len,
+                                    "{\"GPIO\":%d,\"DT\":\"%s\",\"TH\":%.02f,\"TR\":\"%s\"}%s",
+                                    prtconfig->data.outputs[i].gpio_num,
+                                    dt_str,
+                                    prtconfig->data.outputs[i].threshold,
+                                    (prtconfig->data.outputs[i].trigger == TRD_TRIGGER_HIGH) ? "H" :
+                                    (prtconfig->data.outputs[i].trigger == TRD_TRIGGER_LOW) ? "L" : "NONE",
+                                    (i < OUTPUT_GPIO_MAX - 1) ? "," : "");
+                    if ((len < 0) || (max_result_len - len) <= 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
                 }
                 len += snprintf(result + len,
                                 max_result_len - len,
-                                "\"HTH\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
-                                prtconfig->data.thresholds.high.humidity.value,
-                                treshold_trigger);
-                if ((len < 0) || (max_result_len - len) <= 0) {
-                    printf("Error generating info content\n");
-                    return 0; // Error
-                }
-                memset(treshold_trigger, 0, sizeof(treshold_trigger));
-                switch(prtconfig->data.thresholds.high.pressure.trigger) {
-                    case TRD_TRIGGER_HIGH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
-                        break;
-                    case TRD_TRIGGER_LOW:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
-                        break;
-                    case TRD_TRIGGER_BOTH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
-                        break;
-                    case TRD_TRIGGER_NONE:
-                    default:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
-                        break;
-                }
-                len += snprintf(result + len,
-                                max_result_len - len,
-                                "\"HTP\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
-                                prtconfig->data.thresholds.high.pressure.value,
-                                treshold_trigger);
-                if ((len < 0) || (max_result_len - len) <= 0) {
-                    printf("Error generating info content\n");
-                    return 0; // Error
-                }
-                // Add thresholds low
-                memset(treshold_trigger, 0, sizeof(treshold_trigger));
-                switch(prtconfig->data.thresholds.low.temperature.trigger) {
-                    case TRD_TRIGGER_HIGH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
-                        break;
-                    case TRD_TRIGGER_LOW:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
-                        break;
-                    case TRD_TRIGGER_BOTH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
-                        break;
-                    case TRD_TRIGGER_NONE:
-                    default:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
-                        break;
-                }
-                len += snprintf(result + len,
-                                max_result_len - len,
-                                "\"LTT\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
-                                prtconfig->data.thresholds.low.temperature.value,
-                                treshold_trigger);
-                if ((len < 0) || (max_result_len - len) <= 0) {
-                    printf("Error generating info content\n");
-                    return 0; // Error
-                }
-                memset(treshold_trigger, 0, sizeof(treshold_trigger));
-                switch(prtconfig->data.thresholds.low.humidity.trigger) {
-                    case TRD_TRIGGER_HIGH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
-                        break;
-                    case TRD_TRIGGER_LOW:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
-                        break;
-                    case TRD_TRIGGER_BOTH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
-                        break;
-                    case TRD_TRIGGER_NONE:
-                    default:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
-                        break;
-                }
-                len += snprintf(result + len,
-                                max_result_len - len,
-                                "\"LTH\":{\"VAL\":%.02f,\"TR\":\"%s\"},",
-                                prtconfig->data.thresholds.low.humidity.value,
-                                treshold_trigger);
-                if ((len < 0) || (max_result_len - len) <= 0) {
-                    printf("Error generating info content\n");
-                    return 0; // Error
-                }
-                memset(treshold_trigger, 0, sizeof(treshold_trigger));
-                switch(prtconfig->data.thresholds.low.pressure.trigger) {
-                    case TRD_TRIGGER_HIGH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "H");
-                        break;
-                    case TRD_TRIGGER_LOW:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "L");
-                        break;
-                    case TRD_TRIGGER_BOTH:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "B");
-                        break;
-                    case TRD_TRIGGER_NONE:
-                    default:
-                        snprintf(treshold_trigger, sizeof(treshold_trigger), "NONE");
-                        break;
-                }
-                len += snprintf(result + len,
-                                max_result_len - len,
-                                "\"LTP\":{\"VAL\":%.02f,\"TR\":\"%s\"}}}",
-                                prtconfig->data.thresholds.low.pressure.value,
-                                treshold_trigger);
+                                "]}");
                 if ((len < 0) || (max_result_len - len) <= 0) {
                     printf("Error generating info content\n");
                     return 0; // Error
