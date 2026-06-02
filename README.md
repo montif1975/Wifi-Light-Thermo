@@ -143,24 +143,20 @@ The response's body is:
         "TH":3,
         "WT":"DARK"
     },
-    "THRESH":{
-        "HTT":{
-            "VAL":30,
+    "OUTS":[
+        {
+            "GPIO":6,
+            "DT":"T",
+            "TH":26.00,
             "TR":"H"
         },
-        "HTH":{
-            "VAL":65,
+        {
+            "GPIO":7,
+            "DT":"H",
+            "TH":61.50,
             "TR":"H"
-        },
-        "LTT":{
-            "VAL":18,
-            "TR":"L"
-        },
-        "LTH":{
-            "VAL":45,
-            "TR":"L"
         }
-    }
+    ]
 }
 ```  
 > In the WIFI object the IP address, the netmask and the gateway value are assigned by the network when the device is in STA (station) mode.  
