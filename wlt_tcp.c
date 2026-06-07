@@ -39,7 +39,7 @@ static char *http_post_req_str[HTTP_POST_REQ_MAX] = {
     API_SET_ALL_PARAMS_URL,
     API_SET_WIFI_PARAMS_URL,
     API_SET_SETTING_PARAMS_URL, 
-    API_SET_THRESH_PARAMS_URL
+    API_SET_OUT_PARAMS_URL
 };
 
 /*
@@ -875,7 +875,7 @@ static int fill_server_content(const char *request, const char *params, char *re
                 case HTTP_API_SET_ALL_PARAMS:
                 case HTTP_API_SET_WIFI_PARAMS:
                 case HTTP_API_SET_SETTING_PARAMS:
-                case HTTP_API_SET_THRESH_PARAMS:
+                case HTTP_API_SET_OUT_PARAMS:
                     len = snprintf(result, max_result_len, "{\"status\":\"ok\"}");
                     if (len >= max_result_len) {
                         printf("Result buffer too small for API set params (len=%d, max_result_len=%zu)\n", len, max_result_len);
@@ -1108,9 +1108,9 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                                 parse_result = parse_post_specific_body(body, PARAMS_SETTINGS);
                                 break;
 
-                            case HTTP_API_SET_THRESH_PARAMS:
+                            case HTTP_API_SET_OUT_PARAMS:
                                 // in this case we expect ONLY a specific type of parameters in the body
-                                parse_result = parse_post_specific_body(body, PARAMS_THRESHOLDS);
+                                parse_result = parse_post_specific_body(body, PARAMS_OUTPUTS);
                                 break;
 
                             case HTTP_API_SET_ALL_PARAMS:

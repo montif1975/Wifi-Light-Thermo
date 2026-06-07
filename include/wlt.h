@@ -164,7 +164,7 @@ typedef struct api_parse_key
 typedef enum {
     PARAMS_WIFI,
     PARAMS_SETTINGS,
-    PARAMS_THRESHOLDS,
+    PARAMS_OUTPUTS,
     PARAMS_MAX
 } params_type_t;
 

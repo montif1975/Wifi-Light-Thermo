@@ -467,7 +467,7 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 #define API_SET_ALL_PARAMS_URL              API_BASE_URL API_VERS "/setallparams"
 #define API_SET_WIFI_PARAMS_URL             API_BASE_URL API_VERS "/setwifiparams"
 #define API_SET_SETTING_PARAMS_URL          API_BASE_URL API_VERS "/setsettingparams"
-#define API_SET_THRESH_PARAMS_URL           API_BASE_URL API_VERS "/setthreshparams"
+#define API_SET_OUT_PARAMS_URL              API_BASE_URL API_VERS "/setoutparams"
 
 enum http_get_req {
     HTTP_NONE,
@@ -503,7 +503,7 @@ enum http_post_req {
     HTTP_API_SET_ALL_PARAMS,
     HTTP_API_SET_WIFI_PARAMS,
     HTTP_API_SET_SETTING_PARAMS,
-    HTTP_API_SET_THRESH_PARAMS,
+    HTTP_API_SET_OUT_PARAMS,
     HTTP_POST_REQ_MAX   
 };
 

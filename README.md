@@ -105,7 +105,7 @@ The table below lists the API implementated.
 | /api/v1/setallparams     |    POST   |   YES       |
 | /api/v1/setwifiparams    |    POST   |   YES       |
 | /api/v1/setsettingparams |    POST   |   YES       |
-| /api/v1/setthreshparams  |    POST   |   YES       |  
+| /api/v1/setoutparams     |    POST   |   YES       |  
 
 If the API requested is not implemented, the device replies with a `501 - Not Implemented` http code.  
 
@@ -115,13 +115,16 @@ The body of the replay is:
 ```json  
 {
     "T": 28.75,
-    "TF": "C" or "F",
+    "TF": "C",
     "H": 49.88
 }
 ```  
 where:  
-- "C" = Celsius degree  
-- "F" = Fahrenheit degree  
+- "T" = Temperature value in TF format
+- "TF" = Temperature format can be one of the following values:  
+    - "C" = Celsius degree  
+    - "F" = Fahrenheit degree  
+- "H" = Humidity value in %RH  
 
 ### /api/v1/settings  
 The `/api/v1/settings` is used to get all the configuration of the device.  
@@ -172,15 +175,19 @@ The `/api/v1/setwifiparams` body request is:
 {
     "WIFI": {
         "DEVNAME": "the name of the device",
-        "MODE": "STA" or "AP",
+        "MODE": "STA",
         "SSID": "the SSID of the wifi network",
         "PASS": "the password of the wifi network"
     }
 }
 ```  
 where:  
-- "STA" = Station mode  
-- "AP" = Access point mode  
+- "DEVNAME" = String to identify the device (the name of the device)  
+- "MODE" = WiFi mode, can be one of the following values:  
+    - "STA" = Station mode  
+    - "AP" = Access point mode  
+- "SSID" = SSID of the WiFi network  
+- "PASS" = Password of the WiFi network  
 If at least one of the value for the expected keys has a wrong value, the device replies with a `400 - Bad Request`.  
 
 ### /api/v1/setsettingparams  
@@ -188,55 +195,60 @@ The `/api/v1/setsettingparams` body request is:
 ```json
 {
     "SETTINGS": {
-        "TF": "F" or "C", # temperature format
-        "OF": "TXT" or "CSV", # output format
-        "PT": 1..63, # polling time in s
-        "TH": 1..7, # threshold Hysteresis
-        "WT": "DARK" or "LIGHT", # web page theme
+        "TF": "F",
+        "OF": "TXT",
+        "PT": 30,
+        "TH": 3,
+        "WT": "DARK"
     }
 }
 ```  
 where:  
-- "C" = Celsius degree  
-- "F" = Fahrenheit degree  
-- "TXT" = text format: XX.YY °C/°F - XX,YY %RH  (es. 35.25 °C - 45.50 %RH)  
-- "CSV" = Comma Separated Values: temp;hum (es. 23.45;57.45)  
+- "TF" = Temperature scale, can be one of the following values:  
+    - "C" = Celsius degree  
+    - "F" = Fahrenheit degree  
+- "OF" = Output format on serial port:  
+    - "TXT" = text format: XX.YY °C/°F - XX,YY %RH  (es. 35.25 °C - 45.50 %RH)  
+    - "CSV" = Comma Separated Values: temp;hum (es. 23.45;57.45)  
+- "PT" = Polling time in 1..63 seconds range  
+- "TH" = Thresholds Hysteresis in 1..7 polling time range (it's the number of polling time wait before update the output state in order to avoid continuous and fast switching)  
+- "WT" = Web page theme, can be one the following values:  
+    - "DARK"  
+    - "LIGHT"  
 
-### /api/v1/setthreshparams  
-The `/api/v1/setthreshparams` body request is:  
+### /api/v1/setoutparams  
+The `/api/v1/setoutparams` body request is:  
 ```json
 {
-    "THRESH": {
-        "HTT": {
-            "VAL": -40 .. +125,
-            "TR": "NONE" | "H" | "L" | "B"
+    "OUTS":[
+        {
+            "GPIO":6,
+            "DT":"T",
+            "TH":26.00,
+            "TR":"H"
         },
-        "HTH": {
-            "VAL": 0 .. 100,
-            "TR": "NONE" | "H" | "L" | "B"
-        },
-        "LTT": {
-            "VAL": -40 .. +125,
-            "TR": "NONE" | "H" | "L" | "B"
-        },
-        "LTH": {
-            "VAL": 0 .. 100,
-            "TR": "NONE" | "H" | "L" | "B"
+        {
+            "GPIO":7,
+            "DT":"H",
+            "TH":61.50,
+            "TR":"H"
         }
-    }
+    ]
 }
 ```  
 where:  
-- "HTT" = High threshold temperature  
-- "HTH" = High threshold humidity  
-- "LTT" = Low threshold temperature  
-- "LTH" = Low threshold humidity  
-- "VAL" = value of the threshold. **The temperature thresholds are be interpreted as °C**  
+- "GPIO" = number of the GPIO used (depends on PIN connected)  
+- "DT" = Data type, can be one of the following values:  
+    - T = Temperature  
+    - H = Humidity  
+    - P = Pressure (only if sensor support it)  
+- "TH" = Threshold value  
 - "TR" = type of the trigger, can be one of the following value:  
     - "NONE" = no-threshold, disabled  
     - "H" = high, when the value is higher than VAL  
     - "L" = low, when the value is lower than VAL  
-    - "B" = both, the action associated with the threshold is executed both when the physical quantity becomes greater than VAL and when it becomes less.  
+
+> NOTE: OUTS must be a Json Array even if it contains the settings of only one output.  
 
 ## Serial interface  
 

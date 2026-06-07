@@ -24,6 +24,69 @@ wlt_run_time_config_t *prtconfig;
 wlt_config_data_t *pconfig;
 
 /*
+ * Function: wlt_update_outputs_state()
+ * Description: Update the state of all output GPIOs based on the current sensor data and trigger conditions.
+ */
+void wlt_update_outputs_state(wlt_run_time_config_t *config)
+{
+    for (int i = 0; i < OUTPUT_GPIO_MAX; i++) {
+        outputs_t *output = &config->data.outputs[i];
+        wlt_outputs_rt_t *output_rt = &config->outputs_rt[i];
+
+        // Determine the current value of the monitored data
+        float current_value = 0.0;
+        switch (output->data_type) {
+            case WLT_DATA_TYPE_TEMP:
+                current_value = config->data.temperature;
+                break;
+            case WLT_DATA_TYPE_HUMIDITY:
+                current_value = config->data.humidity;
+                break;
+            case WLT_DATA_TYPE_PRESSURE:
+                current_value = config->data.pressure;
+                break;
+            default:
+                continue; // Skip if data type is not valid
+        }
+
+        // Check the trigger condition and update GPIO state accordingly
+        bool trigger_condition_met = false;
+        switch (output->trigger) {
+            case TRD_TRIGGER_HIGH:
+                trigger_condition_met = (current_value > output->threshold);
+                break;
+            case TRD_TRIGGER_LOW:
+                trigger_condition_met = (current_value < output->threshold);
+                break;
+            case TRD_TRIGGER_NONE:
+            default:
+                break; // No trigger, do not change state
+        }
+
+        // Update GPIO state with hysteresis management
+        if (trigger_condition_met) {
+            if (!output_rt->gpio_state) {
+                gpio_put(output->gpio_num, 1); // Set GPIO high
+                output_rt->gpio_state = true;
+                output_rt->counter = 0; // Reset counter when triggered
+                PRINT_DEBUG("Activate output %d (GPIO=%d)\n", i, output->gpio_num);
+            }
+        } else {
+            if (output_rt->gpio_state) {
+                if (output_rt->counter >= config->data.settings.options.trd_hyst) {
+                    gpio_put(output->gpio_num, 0); // Set GPIO low
+                    output_rt->gpio_state = false;
+                    output_rt->counter = 0; // Reset counter after deactivation
+                    PRINT_DEBUG("Deactivate output %d (GPIO=%d)\n", i, output->gpio_num);
+                } else {
+                    output_rt->counter++; // Increment counter while condition is not met
+                }
+            }
+        }
+    }
+}
+
+/*
  * Function: wlt_send_to_uart()
  * Send to UART the temperature and humidity in the requested format.
  */
@@ -742,6 +805,8 @@ int main()
                                      prtconfig->data.humidity,
                                      prtconfig->data.settings.options.t_format,
                                      prtconfig->data.settings.options.out_format);
+                    // Update the outputs state based on the new sensor data
+                    wlt_update_outputs_state(prtconfig);
                 }
             } else {
                 printf("Sensor not available, using default values\n");
