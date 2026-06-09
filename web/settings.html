@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Config Form</title>
+<!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
+<style>
+body {
+font-family: Arial, sans-serif;
+background-color: #f4f6f8;
+color: #333;
+display: flex;
+justify-content: center;
+align-items: flex-start;
+min-height: 100vh;
+padding-top: 50px;
+margin: 0;
+}
+.form-container {
+background-color: #ffffff;
+padding: 30px;
+border-radius: 8px;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+width: 300px;
+}
+h2 {
+color: #2c3e50;
+margin-bottom: 20px;
+text-align: center;
+}
+label {
+display: block;
+margin-bottom: 6px;
+font-weight: 500;
+color: #34495e;
+}
+input[type="text"],
+input[type="password"] {
+width: 100%%;
+padding: 8px;
+margin-bottom: 16px;
+border: 1px solid #ccd6dd;
+border-radius: 4px;
+font-size: 14px;
+transition: border-color 0.3s ease;
+}
+input[type="text"]:focus {
+border-color: #3498db;
+outline: none;
+}
+input[type="submit"] {
+width: 100%%;
+padding: 10px;
+background-color: #3498db;
+color: white;
+border: none;
+border-radius: 4px;
+font-size: 16px;
+cursor: pointer;
+transition: background-color 0.3s ease;
+}
+input[type="submit"]:hover {
+background-color: #2980b9;
+}
+</style>
+</head>
+<body>
+<div class="form-container">
+<h2>Wifi Sensor Configuration</h2>
+<form action="/setparams" method="get">
+<h3>Wifi config (STA mode)</h3>
+<hr>
+<label for="ssid">SSID</label>
+<input type="text" id="ssid" name="ssid" value="%s">
+<label for="pwd">Password</label>
+<input type="password" id="pwd" name="pwd" value="%s">
+<label for="devname">Device Name</label>
+<input type="text" id="devname" name="devname" value="%s">
+<h3>Sensor config</h3>
+<hr>
+<div class="sc">
+<p>Temperature displayed in:</p>
+<label><input type="radio" name="scale" value="C" %s>&degC</label>
+<label><input type="radio" name="scale" value="F" %s>&degF</label>
+<p>Output format:</p>
+<label><input type="radio" name="oform" value="TXT" %s>TXT</label>
+<label><input type="radio" name="oform" value="CSV" %s>CSV</label>
+</div>
+<hr>
+<input type="submit" value="Save">
+</form>
+<h2>Advanced Settings</h2>
+<p>Advanced settings are available <a href="/advparams">here</a></p>
+</div>
+</body>
+</html>

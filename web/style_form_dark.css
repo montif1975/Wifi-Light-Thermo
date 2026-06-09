@@ -1,0 +1,49 @@
+:root {
+--bg: #121212;
+--fg: #e0e0e0;
+--border: #444;
+--accent: #00f;
+}
+body {
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  margin: 10px;
+  font-size: 14px;
+}
+.container {
+  max-width: 320px;
+  margin: auto;
+}
+.row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+label {
+  flex: 1;
+}
+input[type="text"],
+input[type="password"] {
+  flex: 2;
+  padding: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+}
+.inline {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+button {
+  width: 100%;
+  padding: 6px;
+  background: var(--accent);
+  color: white;
+  border: none;
+}
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+}

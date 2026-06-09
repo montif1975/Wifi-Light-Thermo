@@ -6,3 +6,6 @@ display:flex;align-items:center;justify-content:center;height:100vh}
 .v{font-weight:bold}
 .d{color:#000000;font-size:18px;text-align:center;margin-top:20px}
 .t{color:#000000;font-size:18px}
+.led{width: 16px;height: 16px;border-radius: 50%;display: inline-block;margin-right: 8px;}
+.led.off{background-color: #555;box-shadow: inset 0 0 5px #222;}
+.led.on{background-color: #00cc00;box-shadow: 0 0 10px #00ff00;}

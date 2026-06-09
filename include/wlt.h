@@ -23,6 +23,9 @@
 #define WIFI_DEFAULT_DEVICENAME             "WiFi Sensor"
 
 #define GPIO_SELECT_WIFI_MODE               22
+#define GPIO_OUTPUT_1                       6
+#define GPIO_OUTPUT_2                       7
+#define OUTPUT_GPIO_MAX                     2
 
 #define RGB_LED_ON_BOOT                     RGB_COLOR_RED
 #define RGB_LED_ON_FAIL                     (RGB_COLOR_RED | RGB_BLINK_OPT)
@@ -42,6 +45,13 @@ typedef enum wlt_error{
     WLT_GENERIC_ERROR = -1,
     WLT_INVALID_ARGUMENT = -2
 } wlt_error_t;
+
+typedef enum wlt_data_type {
+    WLT_DATA_TYPE_NULL = 0,
+    WLT_DATA_TYPE_TEMP,
+    WLT_DATA_TYPE_HUMIDITY,
+    WLT_DATA_TYPE_PRESSURE
+} wlt_data_type_t;
 
 typedef struct wlt_net_config {
     uint8_t devicename[WIFI_DEVICENAME_MAX_LEN];
@@ -93,37 +103,33 @@ typedef enum {
     TRD_TRIGGER_NONE,   // No trigger
     TRD_TRIGGER_HIGH,   // Trigger when value is up the threshold
     TRD_TRIGGER_LOW,    // Trigger when value is below the threshold
-    TRD_TRIGGER_BOTH,   // Trigger when value is up and below the threshold
     TRD_TRIGGER_MAX
 } trd_trigger_t;
 
-typedef struct trd {
-    float   value;      // threshold value
-    uint8_t trigger;    // type of trigger
-} trd_t;
+typedef struct wlt_outputs {
+    wlt_data_type_t data_type;  // data type to output on the GPIOs (temperature, humidity, pressure)
+    trd_trigger_t trigger;      // type of trigger to decide the GPIO state
+    uint8_t gpio_num;           // GPIO number to output the signal
+    float threshold;            // threshold to compare the data with to decide the GPIO state
+} outputs_t;
 
-typedef struct threshold {
-    trd_t temperature; // Temperature threshold
-    trd_t humidity;    // Humidity threshold
-    trd_t pressure;    // Pressure threshold
-} threshold_t;
-
-typedef struct thresholds {
-    threshold_t high;  // High thresholds
-    threshold_t low;   // Low thresholds
-} thresholds_t;
+typedef struct wlt_outputs_rt {
+    bool gpio_state;    // Current state of the GPIO outputs
+    uint8_t counter;    // Counter to manage the threshold trigger hysteresis
+} wlt_outputs_rt_t;
 
 typedef struct wlt_data {
     float           temperature;
     float           humidity;
     float           pressure; // for future use, not available with DHT20 sensor
     settings_t      settings;
-    thresholds_t    thresholds;
+    outputs_t       outputs[OUTPUT_GPIO_MAX];
 } wlt_data_t;
 
 typedef struct wlt_run_time_config {
     wlt_net_config_t net_config;
     wlt_data_t data;
+    wlt_outputs_rt_t outputs_rt[OUTPUT_GPIO_MAX]; // runtime data for the outputs to manage the GPIO state and the trigger hysteresis
 } wlt_run_time_config_t;
 
 typedef struct wlt_config_data {
@@ -132,7 +138,7 @@ typedef struct wlt_config_data {
     uint8_t         wifi_ssid[WIFI_SSID_MAX_LEN];
     uint8_t         wifi_pass[WIFI_PASS_MAX_LEN];
     settings_t      settings;
-    thresholds_t    thresholds;
+    outputs_t       outputs[OUTPUT_GPIO_MAX];
 } wlt_config_data_t;
 
 typedef struct wlt_server {
@@ -158,7 +164,7 @@ typedef struct api_parse_key
 typedef enum {
     PARAMS_WIFI,
     PARAMS_SETTINGS,
-    PARAMS_THRESHOLDS,
+    PARAMS_OUTPUTS,
     PARAMS_MAX
 } params_type_t;
 
@@ -181,17 +187,11 @@ typedef enum {
 } settings_param_t;
 
 typedef enum {
-    THRESHOLDS_HIGH_TEMP,
-    THRESHOLDS_HIGH_HUM,
-    THRESHOLDS_LOW_TEMP,
-    THRESHOLDS_LOW_HUM,
-    THRESHOLDS_MAX
-} thresholds_param_t;
-
-typedef enum {
-    THRESH_SUBPARAM_VALUE,
-    THRESH_SUBPARAM_TRIGGER,
-    THRESH_SUBPARAM_MAX
-} threshold_subparam_t;
+    OUTPUTS_GPIO,
+    OUTPUTS_DATA_TYPE,
+    OUTPUTS_THRESHOLD,
+    OUTPUTS_TRIGGER,
+    OUTPUTS_MAX
+} outputs_param_t;
 
 #endif // WLT_H

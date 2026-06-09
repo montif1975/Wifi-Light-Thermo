@@ -9,8 +9,9 @@ The device allows configuration of several parameters, including:
 - Temperature format: °C or °F  
 - Output format: TXT or CSV
 - Theme of the home page (dark or light)  
-- Sensor polling interval  
-- Temperature and humidity thresholds to activate or deactivate predefined outputs, see [`Remarks`](#remarks).  
+- Sensor polling interval
+- Temperature or humidity associated with the output  
+- Temperature and humidity thresholds to activate or deactivate associated outputs, see [`Remarks`](#remarks).  
 
 You can also set the SSID and password to connect the device to a desired WiFi network.  
 All configuration settings are stored in EEPROM memory connected via the I2C bus: I use a memory add-on available in my project [addon_eeprom_i2c](https://github.com/montif1975/addon_eeprom_i2c).  
@@ -18,30 +19,35 @@ The device's WiFi mode — Access Point (AP) or Station (STA) — is selected ba
 
 To know the working status of the device, I added a RGB led that shows these colors according to the status:  
 
-| LED COLOR | Type   | Status of device |
-|---------- |--------|------------------|
-| RED       | SOLID  | BOOT IN PROGRESS |
-| RED       | BLINK  | GENERIC ERROR    |
-| GREEN     | BLINK  | RUN IN STA MODE  |
-| BLUE      | BLINK  | RUN IN AP MODE   |
-| YELLOW    | SOLID  | WIFI FAIL        |  
+| LED COLOR | Type  | Status of device |
+|---------- |-------|------------------|
+| Red       | Solid | BOOT IN PROGRESS |
+| Red       | Blink | GENERIC ERROR    |
+| Green     | Blink | RUN IN STA MODE  |
+| Blue      | Blink | RUN IN AP MODE   |
+| Yellow    | Solid | WIFI FAIL        |  
 
 Sensor readings are always available, but configuration is only possible when the device is operating in Access Point mode.  
 
 ## Hardware configuration  
 
 In the project I used the Raspberry Pi Pico W with RP2040 microcontroller and Infineon CYW43439 Wifi and Bluetooth chip, see the device datasheet as reference.  
-The temperature sensor is connected to the I2C channel 0 using:  
-- SDA on GPIO 8  
-- SCL on GPIO 9  
+The GPIO used in the code are indicated in the following table.  
 
-The EEPROM flash memory is connected to the I2C channel 1 using:  
-- SDA on GPIO 14  
-- SCL on GPIO 15  
-
-The UART0 is used to transmitt the measured values; the pin used are:  
-- UART TX on GPIO 0  
-- UART RX on GPIO 1  
+|       FUNCTION        | SIGNAL    | GPIO  |
+|-----------------------|-----------|-------|
+| Temperature sensor    | SDA       |   8   |
+|                       | SCL       |   9   |
+| EEPROM flash memory   | SDA       |   14  |
+|                       | SCL       |   15  |
+| UART0 (log)           | TX        |   0   |
+|                       | RX        |   1   |
+| Wifi mode selector    | IN        |   22  |
+| RGB Led green         | OUT       |   3   |
+| RGB Led red           | OUT       |   4   |
+| RGB Led blue          | OUT       |   5   |
+| Output 1              | OUT       |   6   |
+| Output 2              | OUT       |   7   |
 
 The GPIO22 is used to setup the wifi mode according to these values:  
 - if GPIO 22 is high the device works in Station Mode (it needs to have a valid SSID and password to connect to the wifi network).  
@@ -49,11 +55,6 @@ The GPIO22 is used to setup the wifi mode according to these values:
 
 In Access Point Mode, **the default network SSID is "PICOW-WIFI" and the password is "PicoWifiPass"**.  
 The default IP address of the device is **192.168.8.1** and it acts as DHCP server for up to 4 clients.  
-
-The RGB LED is connected to the following GPIOs:  
-- Led GREEN on GPIO 3  
-- Led RED on GPIO 4  
-- Led BLU on GPIO 5  
 
 Depending on the LED used, it is necessary to add resistors between the LED and the Pico PIN to limit the current.  
 I used the AZDelivery KY-009 RGB LED.  
@@ -104,7 +105,7 @@ The table below lists the API implementated.
 | /api/v1/setallparams     |    POST   |   YES       |
 | /api/v1/setwifiparams    |    POST   |   YES       |
 | /api/v1/setsettingparams |    POST   |   YES       |
-| /api/v1/setthreshparams  |    POST   |   YES       |  
+| /api/v1/setoutparams     |    POST   |   YES       |  
 
 If the API requested is not implemented, the device replies with a `501 - Not Implemented` http code.  
 
@@ -114,13 +115,16 @@ The body of the replay is:
 ```json  
 {
     "T": 28.75,
-    "TF": "C" or "F",
+    "TF": "C",
     "H": 49.88
 }
 ```  
 where:  
-- "C" = Celsius degree  
-- "F" = Fahrenheit degree  
+- "T" = Temperature value in TF format
+- "TF" = Temperature format can be one of the following values:  
+    - "C" = Celsius degree  
+    - "F" = Fahrenheit degree  
+- "H" = Humidity value in %RH  
 
 ### /api/v1/settings  
 The `/api/v1/settings` is used to get all the configuration of the device.  
@@ -142,24 +146,20 @@ The response's body is:
         "TH":3,
         "WT":"DARK"
     },
-    "THRESH":{
-        "HTT":{
-            "VAL":30,
+    "OUTS":[
+        {
+            "GPIO":6,
+            "DT":"T",
+            "TH":26.00,
             "TR":"H"
         },
-        "HTH":{
-            "VAL":65,
+        {
+            "GPIO":7,
+            "DT":"H",
+            "TH":61.50,
             "TR":"H"
-        },
-        "LTT":{
-            "VAL":18,
-            "TR":"L"
-        },
-        "LTH":{
-            "VAL":45,
-            "TR":"L"
         }
-    }
+    ]
 }
 ```  
 > In the WIFI object the IP address, the netmask and the gateway value are assigned by the network when the device is in STA (station) mode.  
@@ -175,15 +175,19 @@ The `/api/v1/setwifiparams` body request is:
 {
     "WIFI": {
         "DEVNAME": "the name of the device",
-        "MODE": "STA" or "AP",
+        "MODE": "STA",
         "SSID": "the SSID of the wifi network",
         "PASS": "the password of the wifi network"
     }
 }
 ```  
 where:  
-- "STA" = Station mode  
-- "AP" = Access point mode  
+- "DEVNAME" = String to identify the device (the name of the device)  
+- "MODE" = WiFi mode, can be one of the following values:  
+    - "STA" = Station mode  
+    - "AP" = Access point mode  
+- "SSID" = SSID of the WiFi network  
+- "PASS" = Password of the WiFi network  
 If at least one of the value for the expected keys has a wrong value, the device replies with a `400 - Bad Request`.  
 
 ### /api/v1/setsettingparams  
@@ -191,55 +195,60 @@ The `/api/v1/setsettingparams` body request is:
 ```json
 {
     "SETTINGS": {
-        "TF": "F" or "C", # temperature format
-        "OF": "TXT" or "CSV", # output format
-        "PT": 1..63, # polling time in s
-        "TH": 1..7, # threshold Hysteresis
-        "WT": "DARK" or "LIGHT", # web page theme
+        "TF": "F",
+        "OF": "TXT",
+        "PT": 30,
+        "TH": 3,
+        "WT": "DARK"
     }
 }
 ```  
 where:  
-- "C" = Celsius degree  
-- "F" = Fahrenheit degree  
-- "TXT" = text format: XX.YY °C/°F - XX,YY %RH  (es. 35.25 °C - 45.50 %RH)  
-- "CSV" = Comma Separated Values: temp;hum (es. 23.45;57.45)  
+- "TF" = Temperature scale, can be one of the following values:  
+    - "C" = Celsius degree  
+    - "F" = Fahrenheit degree  
+- "OF" = Output format on serial port:  
+    - "TXT" = text format: XX.YY °C/°F - XX,YY %RH  (es. 35.25 °C - 45.50 %RH)  
+    - "CSV" = Comma Separated Values: temp;hum (es. 23.45;57.45)  
+- "PT" = Polling time in 1..63 seconds range  
+- "TH" = Thresholds Hysteresis in 1..7 polling time range (it's the number of polling time wait before update the output state in order to avoid continuous and fast switching)  
+- "WT" = Web page theme, can be one the following values:  
+    - "DARK"  
+    - "LIGHT"  
 
-### /api/v1/setthreshparams  
-The `/api/v1/setthreshparams` body request is:  
+### /api/v1/setoutparams  
+The `/api/v1/setoutparams` body request is:  
 ```json
 {
-    "THRESH": {
-        "HTT": {
-            "VAL": -40 .. +125,
-            "TR": "NONE" | "H" | "L" | "B"
+    "OUTS":[
+        {
+            "GPIO":6,
+            "DT":"T",
+            "TH":26.00,
+            "TR":"H"
         },
-        "HTH": {
-            "VAL": 0 .. 100,
-            "TR": "NONE" | "H" | "L" | "B"
-        },
-        "LTT": {
-            "VAL": -40 .. +125,
-            "TR": "NONE" | "H" | "L" | "B"
-        },
-        "LTH": {
-            "VAL": 0 .. 100,
-            "TR": "NONE" | "H" | "L" | "B"
+        {
+            "GPIO":7,
+            "DT":"H",
+            "TH":61.50,
+            "TR":"H"
         }
-    }
+    ]
 }
 ```  
 where:  
-- "HTT" = High threshold temperature  
-- "HTH" = High threshold humidity  
-- "LTT" = Low threshold temperature  
-- "LTH" = Low threshold humidity  
-- "VAL" = value of the threshold. **The temperature thresholds are be interpreted as °C**  
+- "GPIO" = number of the GPIO used (depends on PIN connected)  
+- "DT" = Data type, can be one of the following values:  
+    - T = Temperature  
+    - H = Humidity  
+    - P = Pressure (only if sensor support it)  
+- "TH" = Threshold value  
 - "TR" = type of the trigger, can be one of the following value:  
     - "NONE" = no-threshold, disabled  
     - "H" = high, when the value is higher than VAL  
     - "L" = low, when the value is lower than VAL  
-    - "B" = both, the action associated with the threshold is executed both when the physical quantity becomes greater than VAL and when it becomes less.  
+
+> NOTE: OUTS must be a Json Array even if it contains the settings of only one output.  
 
 ## Serial interface  
 

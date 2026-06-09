@@ -6,13 +6,13 @@
 int check_and_remove_quotes(char *str);
 wlt_error_t api_parse_wifi(char *wifi_params);
 wlt_error_t api_parse_settings(char *settings_params);
-wlt_error_t api_parse_thresholds(char *thresholds_params);
-wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value);
+wlt_error_t api_parse_outputs(char *outputs_params);
+wlt_error_t api_parse_single_output(char *output_params, int output_index);
 
 api_parse_key_t api_parse_keys[PARAMS_MAX] = {
     {"WIFI", api_parse_wifi},
     {"SETTINGS", api_parse_settings},
-    {"THRESH", api_parse_thresholds}
+    {"OUTS", api_parse_outputs}
 };
 
 static char *api_wifi_params[WIFI_PARAM_MAX] = {
@@ -30,23 +30,17 @@ static char *api_settings_params[SETTINGS_MAX] = {
     "WT"
 };
 
-static char *api_thresholds_params[THRESHOLDS_MAX] = {
-    "HTT",
-    "HTH",
-    "LTT",
-    "LTH"
-};
-
-static char *threshold_subparams[THRESH_SUBPARAM_MAX] = {
-    "VAL",
+static char *api_outs_params[OUTPUTS_MAX] = {
+    "GPIO",
+    "DT",
+    "TH",
     "TR"
 };
 
 static char *threshold_trigger_types[TRD_TRIGGER_MAX] = {
     "NONE",
     "H",
-    "L",
-    "B"
+    "L"
 };
 
 /*
@@ -342,14 +336,14 @@ wlt_error_t api_parse_settings(char *settings_params)
 }
 
 /*
- * Function: api_parse_thresholds()
- * Description: This function parses the THRESHOLD parameters from a JSON string.
+ * Function: api_parse_outputs()
+ * Description: This function parses the OUTPUTS parameters from a JSON string.
  * Parameters:
- * thresholds_params - pointer to the JSON string containing THRESHOLD parameters
+ * outputs_params - pointer to the JSON string containing OUTPUTS parameters
  * Returns:
  * WLT_SUCCESS on success, WLT_GENERIC_ERROR or WLT_INVALID_PARAM on failure
 */
-wlt_error_t api_parse_thresholds(char *thresholds_params)
+wlt_error_t api_parse_outputs(char *outputs_params)
 {
     wlt_error_t res;
     ecjp_return_code_t ret;
@@ -361,72 +355,58 @@ wlt_error_t api_parse_thresholds(char *thresholds_params)
     
     memset(&results, 0, sizeof(results));
 
-    printf("Parsing THRESHOLD parameters...\n");
-    ret = ecjp_check_and_load_2(thresholds_params, &item_list, &results);
+    printf("Parsing OUTPUTS parameters: %s\n", outputs_params);
+    ret = ecjp_check_and_load_2(outputs_params, &item_list, &results);
     if (ret != ECJP_NO_ERROR) {
-        printf("Error parsing thresholds form data: %d\n", ret);
+        printf("Error parsing outputs form data: %d\n", ret);
         res = WLT_GENERIC_ERROR;
     } else {
         res = WLT_SUCCESS;
-        while (item_list != NULL) {
-            printf("Type = %s, Value = %s\n", ecjp_type[item_list->item.type], (char *)item_list->item.value);
-            switch (item_list->item.type) {
-                case ECJP_TYPE_OBJECT:
-                case ECJP_TYPE_ARRAY:
-                    printf("Item Object and Array not supported.\n");
-                    res = WLT_GENERIC_ERROR;
-                    break;
-                
-                case ECJP_TYPE_KEY_VALUE_PAIR:
-                    memset(key, 0, sizeof(key));
-                    memset(value, 0, sizeof(value));
-                    // for MCUs without sscanf support, use library function
-                    if (ecjp_split_key_and_value(item_list, key, value, ECJP_BOOL_FALSE) != ECJP_NO_ERROR) {
-                        printf("Failed to split key-value pair.\n");
-                        res = WLT_GENERIC_ERROR;
-                    } else  {
-                        check_and_remove_quotes(value);
-                        printf("Key = '%s', Value = '%s'\n", key, value);
-                        for (i=0; i<THRESHOLDS_MAX && res == WLT_SUCCESS; i++) {
-                            if (strcmp(key, api_thresholds_params[i]) == 0) {
-                                printf("Found key '%s', parsing...\n", key);
-                                switch (i) {
-                                    case THRESHOLDS_HIGH_TEMP:
-                                    case THRESHOLDS_HIGH_HUM:
-                                    case THRESHOLDS_LOW_TEMP:
-                                    case THRESHOLDS_LOW_HUM:
-                                        {
-                                            // value is expected to be a JSON object with subparameters
-                                            printf("Parsing threshold subparameters for '%s'\n", key);
-                                            wlt_error_t subparam_res = api_parse_threshold_subparam(i, value);
-                                            if (subparam_res != WLT_SUCCESS) {
-                                                printf("Failed to parse threshold subparameters for '%s'\n", key);
-                                                res = WLT_GENERIC_ERROR;
-                                            } else {
-                                                printf("Parsed threshold subparameters for '%s' successfully.\n", key);
-                                            }
-                                        }
-                                        break;
-
-                                    default:
-                                        printf("Unknown THRESHOLD parameter.\n");
-                                        res = WLT_GENERIC_ERROR;
-                                        break;
-                                }
-                            }
+        if(results.struct_type != ECJP_ST_ARRAY) {
+            printf("Expected an array of outputs parameters.\n");
+            res = WLT_GENERIC_ERROR;
+        } else {
+            i = 0;
+            while (item_list != NULL) {
+                printf("Output %d:\n", (i + 1));
+                printf("Type = %s, Value = %s\n", ecjp_type[item_list->item.type], (char *)item_list->item.value);
+                switch (item_list->item.type) {
+                    case ECJP_TYPE_OBJECT:
+                        if(api_parse_single_output((char *)item_list->item.value, i) != WLT_SUCCESS) {
+                            printf("Failed to parse output %d parameters.\n", (i + 1));
+                            res = WLT_GENERIC_ERROR;
                         }
-                    }
-                    break;
-                
-                default:
-                    printf("Unknown type.\n");
-                    res = WLT_GENERIC_ERROR;
-                    break;
-            }
-            item_list = item_list->next;
+                        else {
+                            printf("Parsed output %d parameters successfully.\n", (i + 1));
+                            res = WLT_SUCCESS;
+                        }
+                        break;
 
-            if (res != WLT_SUCCESS) {
-                break;
+                    case ECJP_TYPE_ARRAY:
+                        printf("Item Object and Array not supported.\n");
+                        res = WLT_GENERIC_ERROR;
+                        break;
+                    
+                    case ECJP_TYPE_KEY_VALUE_PAIR:
+                        printf("Item Key-Value Pair not supported.\n");
+                        res = WLT_GENERIC_ERROR;
+                        break;
+                    
+                    default:
+                        printf("Unknown type.\n");
+                        res = WLT_GENERIC_ERROR;
+                        break;
+                }
+                item_list = item_list->next;
+
+                if (res != WLT_SUCCESS) {
+                    break;
+                }
+                i++;
+                if (i >= OUTPUT_GPIO_MAX) {
+                    printf("Maximum number of outputs exceeded. Only the first %d outputs will be processed.\n", OUTPUT_GPIO_MAX);
+                    break;
+                }
             }
         }
     }
@@ -435,238 +415,122 @@ wlt_error_t api_parse_thresholds(char *thresholds_params)
 }
 
 /*
- * Function: api_parse_threshold_subparam()
- * Description: This function parses a THRESHOLD subparameter from a JSON string.
+ * Function: api_parse_single_output()
+ * Description: This function parses the parameters of a single output from a JSON string.
  * Parameters:
- * subparam - index of subparameter name
- * value - pointer to the subparameter value
+ * output_params - pointer to the JSON string containing the parameters of a single output
  * Returns:
  * WLT_SUCCESS on success, WLT_GENERIC_ERROR or WLT_INVALID_PARAM on failure
 */
-wlt_error_t api_parse_threshold_subparam(int subparam_index,char *value)
+wlt_error_t api_parse_single_output(char *output_params, int output_index)
 {
-    wlt_error_t res = WLT_SUCCESS;
+    wlt_error_t res;
+    ecjp_return_code_t ret;
     ecjp_check_result_t results;
     ecjp_item_elem_t *item_list = NULL;
     char key[ECJP_MAX_KEY_LEN];
-    char val[ECJP_MAX_KEY_VALUE_LEN];
-    int i, j;
-    float thval;
+    char value[ECJP_MAX_KEY_VALUE_LEN];
+    int i;
+    
+    res = WLT_SUCCESS;
+    results.err_pos = -1;
+    results.num_keys = 0;
+    results.struct_type = ECJP_ST_NULL;
+    results.memory_used = 0;
 
-    memset(&results, 0, sizeof(results));
-
-    printf("Parsing threshold subparam '%s' with value '%s'\n", api_thresholds_params[subparam_index], value);
-    // value is a JSON object with subparameters
-    if (ecjp_check_and_load_2(value, &item_list, &results) != ECJP_NO_ERROR) {
-        printf("Error parsing threshold subparam data\n");
-        res = WLT_GENERIC_ERROR;
+    ret = ecjp_load_2(output_params,&item_list,&results);
+    if (ret != ECJP_NO_ERROR) {
+        printf("Error parsing outputs form data: %d\n", ret);
     } else {
-        res = WLT_SUCCESS;
         while (item_list != NULL) {
-            printf("Type = %s, Value = %s\n", ecjp_type[item_list->item.type], (char *)item_list->item.value);
-            switch (item_list->item.type) {
-                case ECJP_TYPE_OBJECT:
-                case ECJP_TYPE_ARRAY:
-                    printf("Item Object and Array not supported.\n");
+            printf("  Item read successfully.\n");
+            printf("  Type = %s, Value = %s\n", ecjp_type[item_list->item.type], (char *)item_list->item.value);
+            if(item_list->item.type == ECJP_TYPE_KEY_VALUE_PAIR) {
+                // parse key-value pair
+                memset(key, 0, sizeof(key));
+                memset(value, 0, sizeof(value));
+                // for MCUs without sscanf support, use library function
+                if (ecjp_split_key_and_value(item_list, key, value, ECJP_BOOL_FALSE) != ECJP_NO_ERROR) {
+                    printf("Failed to split key-value pair.\n");
                     res = WLT_GENERIC_ERROR;
-                    break;
-                
-                case ECJP_TYPE_KEY_VALUE_PAIR:
-                    memset(key, 0, sizeof(key));
-                    memset(value, 0, sizeof(value));
-                    // for MCUs without sscanf support, use library function
-                    if (ecjp_split_key_and_value(item_list, key, value, ECJP_BOOL_FALSE) != ECJP_NO_ERROR) {
-                        printf("Failed to split key-value pair.\n");
-                        res = WLT_GENERIC_ERROR;
-                    } else  {
-                        check_and_remove_quotes(value);
-                        printf("Key = '%s', Value = '%s'\n", key, value);
-                        for (i=0; i<THRESH_SUBPARAM_MAX && res == WLT_SUCCESS; i++) {
-                            if (strcmp(key, threshold_subparams[i]) == 0) {
-                                printf("Found key '%s', parsing...\n", key);
-                                switch (subparam_index) {
-                                    case THRESHOLDS_HIGH_TEMP:
-                                        switch (i)
-                                        {
-                                            case THRESH_SUBPARAM_VALUE:
-                                                {
-                                                    thval = atof(value);
-                                                    printf("Setting High Temperature Threshold to '%0.2f'\n", thval);
-                                                    if(thval < MIN_THR_TEMP_VALUE || thval > MAX_THR_TEMP_VALUE) {
-                                                        printf("Invalid High Temperature Threshold value: %0.2f\n", thval);
-                                                        res = WLT_INVALID_ARGUMENT;
-                                                        break;
-                                                    }
-                                                    prtconfig->data.thresholds.high.temperature.value = thval;
-                                                }
-                                                break;
+                } else  {
+                    check_and_remove_quotes(value);
+                    printf("Key = '%s', Value = '%s'\n", key, value);
+                    for (i=0; i<OUTPUTS_MAX && res == WLT_SUCCESS; i++) {
+                        if (strcmp(key, api_outs_params[i]) == 0) {
+                            printf("Found key '%s', parsing...\n", key);
+                            switch (i) {
+                                case OUTPUTS_GPIO:
+                                    printf("Setting Output GPIO to '%s'\n", value);
+                                    // check if gpio is valid
+                                    int gpio_num = atoi(value);
+                                    // TODO: for better validation, check if the GPIO is already used by other output and check
+                                    // if it's not used by other functions (e.g. I2C, SPI, UART) depending on the board pinout
+                                    if ((gpio_num >= 0) && (gpio_num <= 26)) { // check if gpio is valid for Raspberry Pi Pico
+                                        prtconfig->data.outputs[output_index].gpio_num = gpio_num;
+                                    } else {
+                                        printf("Invalid GPIO value: %d\n", gpio_num);
+                                        res = WLT_INVALID_ARGUMENT;
+                                    }
+                                    break;
 
-                                            case THRESH_SUBPARAM_TRIGGER:
-                                                {
-                                                    for (j=0; j<TRD_TRIGGER_MAX; j++) {
-                                                        if (strcmp(value, threshold_trigger_types[j]) == 0) {
-                                                            printf("Setting High Temperature Threshold Trigger to '%s'\n", value);
-                                                            prtconfig->data.thresholds.high.temperature.trigger = j;
-                                                            break;
-                                                        }
-                                                    }
-                                                    if(j == TRD_TRIGGER_MAX) {
-                                                        printf("Invalid High Temperature Threshold Trigger value: %s\n", value);
-                                                        res = WLT_INVALID_ARGUMENT;
-                                                    }
-                                                }
-                                                break;
+                                case OUTPUTS_DATA_TYPE:
+                                    printf("Setting Output Data Type to '%s'\n", value);
+                                    // set data type
+                                    if (strcmp(value, "T") == 0) {
+                                        prtconfig->data.outputs[output_index].data_type = WLT_DATA_TYPE_TEMP;
+                                    } else if (strcmp(value, "H") == 0) {
+                                        prtconfig->data.outputs[output_index].data_type = WLT_DATA_TYPE_HUMIDITY;
+                                    } else if (strcmp(value, "P") == 0) {
+                                        prtconfig->data.outputs[output_index].data_type = WLT_DATA_TYPE_PRESSURE;
+                                    } else if (strcmp(value, "NULL") == 0) {
+                                        prtconfig->data.outputs[output_index].data_type = WLT_DATA_TYPE_NULL;
+                                    } else {
+                                        printf("Invalid Data Type value: %s\n", value);
+                                        res = WLT_INVALID_ARGUMENT;
+                                    }
+                                    break;
 
-                                            default:
-                                                printf("Unknown THRESHOLD subparameter for param index %d.\n", subparam_index);
-                                                res = WLT_GENERIC_ERROR;
-                                                break;
-                                        }
-                                        break;
+                                case OUTPUTS_THRESHOLD:
+                                    printf("Setting Output Threshold to '%s'\n", value);
+                                    // set threshold
+                                    float threshold = strtof(value, NULL);
+                                    prtconfig->data.outputs[output_index].threshold = threshold;
+                                    printf("Output Threshold set to %0.2f\n", threshold);
+                                    break;
 
-                                    case THRESHOLDS_HIGH_HUM:
-                                        switch (i)
-                                        {
-                                            case THRESH_SUBPARAM_VALUE:
-                                                {
-                                                    thval = atof(value);
-                                                    printf("Setting High Humidity Threshold to '%0.2f'\n", thval);
-                                                    if(thval < MIN_THR_HUM_VALUE || thval > MAX_THR_HUM_VALUE) {
-                                                        printf("Invalid High Humidity Threshold value: %0.2f\n", thval);
-                                                        res = WLT_INVALID_ARGUMENT;
-                                                        break;
-                                                    }
-                                                    prtconfig->data.thresholds.high.humidity.value = thval;
-                                                }
-                                                break;
+                                case OUTPUTS_TRIGGER:
+                                    printf("Setting Output Trigger to '%s'\n", value);
+                                    // set trigger
+                                    if (strcmp(value, "H") == 0) {
+                                        prtconfig->data.outputs[output_index].trigger = TRD_TRIGGER_HIGH;
+                                    } else if (strcmp(value, "L") == 0) {
+                                        prtconfig->data.outputs[output_index].trigger = TRD_TRIGGER_LOW;
+                                    } else if (strcmp(value, "NONE") == 0) {
+                                        prtconfig->data.outputs[output_index].trigger = TRD_TRIGGER_NONE;
+                                    } else {
+                                        printf("Invalid Trigger value: %s\n", value);
+                                        res = WLT_INVALID_ARGUMENT;
+                                    }
+                                    break;
 
-                                            case THRESH_SUBPARAM_TRIGGER:
-                                                {
-                                                    for (j=0; j<TRD_TRIGGER_MAX; j++) {
-                                                        if (strcmp(value, threshold_trigger_types[j]) == 0) {
-                                                            printf("Setting High Humidity Threshold Trigger to '%s'\n", value);
-                                                            prtconfig->data.thresholds.high.humidity.trigger = j;
-                                                            break;
-                                                        }
-                                                    }
-                                                    if(j == TRD_TRIGGER_MAX) {
-                                                        printf("Invalid High Humidity Threshold Trigger value: %s\n", value);
-                                                        res = WLT_INVALID_ARGUMENT;
-                                                    }
-                                                }
-                                                break;
-
-                                            default:
-                                                printf("Unknown THRESHOLD subparameter for param index %d.\n", subparam_index);
-                                                res = WLT_GENERIC_ERROR;
-                                                break;
-                                        }
-                                        break;
-
-                                    case THRESHOLDS_LOW_TEMP:
-                                        switch (i)
-                                        {
-                                            case THRESH_SUBPARAM_VALUE:
-                                                {
-                                                    float thval = atof(value);
-                                                    printf("Setting Low Temperature Threshold to '%0.2f'\n", thval);
-                                                    if(thval < MIN_THR_TEMP_VALUE || thval > MAX_THR_TEMP_VALUE) {
-                                                        printf("Invalid Low Temperature Threshold value: %0.2f\n", thval);
-                                                        res = WLT_INVALID_ARGUMENT;
-                                                        break;
-                                                    }
-                                                    prtconfig->data.thresholds.low.temperature.value = thval;
-                                                }
-                                                break;
-
-                                            case THRESH_SUBPARAM_TRIGGER:
-                                                {
-                                                    for (j=0; j<TRD_TRIGGER_MAX; j++) {
-                                                        if (strcmp(value, threshold_trigger_types[j]) == 0) {
-                                                            printf("Setting Low Temperature Threshold Trigger to '%s'\n", value);
-                                                            prtconfig->data.thresholds.low.temperature.trigger = j;
-                                                            break;
-                                                        }
-                                                    }
-                                                    if(j == TRD_TRIGGER_MAX) {
-                                                        printf("Invalid Low Temperature Threshold Trigger value: %s\n", value);
-                                                        res = WLT_INVALID_ARGUMENT;
-                                                    }
-                                                }
-                                                break;
-
-                                            default:
-                                                printf("Unknown THRESHOLD subparameter for param index %d.\n", subparam_index);
-                                                res = WLT_GENERIC_ERROR;
-                                                break;
-                                        }
-                                        break;
-
-                                    case THRESHOLDS_LOW_HUM:
-                                        switch (i)
-                                        {
-                                            case THRESH_SUBPARAM_VALUE:
-                                                {
-                                                    thval = atof(value);
-                                                    printf("Setting Low Humidity Threshold to '%0.2f'\n", thval);
-                                                    if(thval < MIN_THR_HUM_VALUE || thval > MAX_THR_HUM_VALUE) {
-                                                        printf("Invalid Low Humidity Threshold value: %0.2f\n", thval);
-                                                        res = WLT_INVALID_ARGUMENT;
-                                                        break;
-                                                    }
-                                                    prtconfig->data.thresholds.low.humidity.value = thval;
-                                                }
-                                                break;
-
-                                            case THRESH_SUBPARAM_TRIGGER:
-                                                {
-                                                    for (j=0; j<TRD_TRIGGER_MAX; j++) {
-                                                        if (strcmp(value, threshold_trigger_types[j]) == 0) {
-                                                            printf("Setting Low Humidity Threshold Trigger to '%s'\n", value);
-                                                            prtconfig->data.thresholds.low.humidity.trigger = j;
-                                                            break;
-                                                        }
-                                                    }
-                                                    if(j == TRD_TRIGGER_MAX) {
-                                                        printf("Invalid Low Humidity Threshold Trigger value: %s\n", value);
-                                                        res = WLT_INVALID_ARGUMENT;
-                                                    }
-                                                }
-                                                break;
-
-                                            default:
-                                                printf("Unknown THRESHOLD subparameter for param index %d.\n", subparam_index);
-                                                res = WLT_GENERIC_ERROR;
-                                                break;
-                                        }
-                                        break;
-
-                                    default:
-                                        printf("Unknown THRESHOLD subparameter.\n");
-                                        res = WLT_GENERIC_ERROR;
-                                        break;
-                                }
+                                default:
+                                    printf("Unknown OUTPUTS parameter.\n");
+                                    res = WLT_GENERIC_ERROR;
+                                    break;
                             }
                         }
                     }
-                    break;
-                
-                default:
-                    printf("Unknown type.\n");
-                    res = WLT_GENERIC_ERROR;
-                    break;
+                }
             }
             item_list = item_list->next;
-
-            if (res != WLT_SUCCESS) {
-                break;
-            }
         }
     }
-
     ecjp_free_item_list(&item_list);
+
     return res;
 }
+
 
 /*
  * Function: parse_post_specific_body()
