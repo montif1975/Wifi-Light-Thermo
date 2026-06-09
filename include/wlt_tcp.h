@@ -142,7 +142,10 @@ display:flex;align-items:center;justify-content:center;height:100vh}\
 .l{color:#777;font-size:18px}\
 .v{font-weight:bold}\
 .d{color:#ffffff;font-size:18px;text-align:center;margin-top:20px}\
-.t{color:#ffffff;font-size:18px}\r\n"
+.t{color:#ffffff;font-size:18px}\
+.led{width: 16px;height:16px;border-radius:50%;display:inline-block;margin-right:8px;}\
+.led.off{background-color:#555;box-shadow: inset 0 0 5px #222;}\
+.led.on{background-color:#00cc00;box-shadow: 0 0 10px #00ff00;}\r\n"
 
 #define STYLE_CSS_LIGHT                     "body{margin:0;background:#ffffff;color:#0000ff;font:48px monospace;\
 display:flex;align-items:center;justify-content:center;height:100vh}\
@@ -151,7 +154,10 @@ display:flex;align-items:center;justify-content:center;height:100vh}\
 .l{color:#484848;font-size:18px}\
 .v{font-weight:bold}\
 .d{color:#000000;font-size:18px;text-align:center;margin-top:20px}\
-.t{color:#000000;font-size:18px}\r\n"
+.t{color:#000000;font-size:18px}\
+.led{width: 16px;height:16px;border-radius:50%;display:inline-block;margin-right:8px;}\
+.led.off{background-color:#555;box-shadow: inset 0 0 5px #222;}\
+.led.on{background-color:#00cc00;box-shadow: 0 0 10px #00ff00;}\r\n"
 
 // **** INFO PAGE ****
 #define INFO_REPLY_HEAD                     "<!DOCTYPE html>\
@@ -204,7 +210,11 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 <div id=c>\
 <h2 class=t>%s</h2>\
 <div class=r><span class=l>TEMP</span><span class=v>%.02f %s</span></div>\
-<div class=r><span class=l>HUM</span><span class=v>%.02f %%RH</span></div>\
+<div class=r><span class=l>HUM</span><span class=v>%.02f %%RH</span></div>"
+
+#define HOME_REPLY_BODY_OUTS                "<h2 class=t>Outputs</h2>\
+<div class=r><span class=l>OUT1 (%s)</span><span class=\"%s\"></span></div>\
+<div class=r><span class=l>OUT2 (%s)</span><span class=\"%s\"></span></div>\
 <div class=d id=datetime>\
 <h3 id=\"datetime\"></h3>\
 <script>\

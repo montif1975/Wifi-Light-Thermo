@@ -315,6 +315,48 @@ static int build_req_adv_settings_form(char *result, size_t max_result_len)
 }
 
 /*
+ * Function: fill_output_info_strings()
+ * Description: This function fills the output info strings based on the output number.
+ */
+void fill_output_info_strings(int out_num, char *out_type, int size_out_type, char *out_class, int size_out_class)
+{
+    if (out_num == 0) {
+        switch(prtconfig->data.outputs[0].data_type) {
+            case WLT_DATA_TYPE_TEMP:
+                snprintf(out_type, size_out_type, "Temperature");
+                break;
+            case WLT_DATA_TYPE_HUMIDITY:
+                snprintf(out_type, size_out_type, "Humidity");
+                break;
+            case WLT_DATA_TYPE_PRESSURE:
+                snprintf(out_type, size_out_type, "Pressure");
+                break;
+            default:
+                snprintf(out_type, size_out_type, "Unknown");
+                break;
+        }
+        snprintf(out_class, size_out_class, "%s", (prtconfig->outputs_rt[0].gpio_state == true) ? "led on" : "led off");
+    } else if (out_num == 1) {
+        switch(prtconfig->data.outputs[1].data_type) {
+            case WLT_DATA_TYPE_TEMP:
+                snprintf(out_type, size_out_type, "Temperature");
+                break;
+            case WLT_DATA_TYPE_HUMIDITY:
+                snprintf(out_type, size_out_type, "Humidity");
+                break;
+            case WLT_DATA_TYPE_PRESSURE:
+                snprintf(out_type, size_out_type, "Pressure");
+                break;
+            default:
+                snprintf(out_type, size_out_type, "Unknown");
+                break;
+        }
+        snprintf(out_class, size_out_class, "%s", (prtconfig->outputs_rt[1].gpio_state == true) ? "led on" : "led off");
+    }
+    return;
+}
+
+/*
  * Function: fill_server_content()
  * Description: This function fills the server content based on the request and parameters.
  * It returns the length of the generated content or 0 in case of error.
@@ -480,6 +522,25 @@ static int fill_server_content(const char *request, const char *params, char *re
                 else if (len >= max_result_len) {
                     printf("Result buffer too small for info body (len=%d, max_result_len=%zu)\n", len, max_result_len);
                     return 0; // Error
+                }
+                if (prtconfig->data.settings.options.data_valid == SENS_AVAILABLE) {
+                    // copy the outputs status
+                    char out1_type[12];
+                    char out1_class[8];
+                    char out2_type[12];
+                    char out2_class[8];
+                    fill_output_info_strings(0, out1_type, sizeof(out1_type), out1_class, sizeof(out1_class));
+                    fill_output_info_strings(1, out2_type, sizeof(out2_type), out2_class, sizeof(out2_class));
+
+                    len += snprintf(result + len, max_result_len - len, HOME_REPLY_BODY_OUTS, out1_type, out1_class, out2_type, out2_class);
+                    if (len < 0) {
+                        printf("Error generating info content\n");
+                        return 0; // Error
+                    }
+                    else if (len >= max_result_len) {
+                        printf("Result buffer too small for outputs status (len=%d, max_result_len=%zu)\n", len, max_result_len);
+                        return 0; // Error
+                    }
                 }
             break;
 
