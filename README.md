@@ -7,7 +7,7 @@ The measured values can be accessed via a web server interface — either throug
 The device allows configuration of several parameters, including:  
 - The device name  
 - Temperature format: °C or °F  
-- Output format: TXT or CSV
+- Output format on serial port: TXT or CSV
 - Theme of the home page (dark or light)  
 - Sensor polling interval
 - Temperature or humidity associated with the output  
@@ -27,7 +27,8 @@ To know the working status of the device, I added a RGB led that shows these col
 | Blue      | Blink | RUN IN AP MODE   |
 | Yellow    | Solid | WIFI FAIL        |  
 
-Sensor readings are always available, but configuration is only possible when the device is operating in Access Point mode.  
+Sensor readings are always available, but configuration via web server is only possible when the device is operating in Access Point mode.  
+Using API, is possible to change configuration also in Station Mode.  
 
 ## Hardware configuration  
 
@@ -67,19 +68,17 @@ The simple web server implemented in the device serves this pages:
 
 | Page              | Available in AP mode | Available in STA mode |
 |-------------------|----------------------|-----------------------|
-| /home  (*)        |           YES        |        YES            |
-| /info             |           YES        |        YES            |
+| /home             |           YES        |        YES            |
 | /settings         |           YES        |        NO             |
 | /advparams        |           YES        |        NO             |  
 
 `/home` is available in dark or light theme.  
+
 The dark theme is this:  
 ![home](/resources/home_dark.jpg "home web page in dark mode")  
+
 The light theme is this:  
 ![home](/resources/home_light.jpg "home web page in light mode")  
-
-The response to `/info` request is the following:  
-![info](/resources/info.jpg "info web page response")  
 
 The response to `/settings` page depends on the wifi mode; in AP mode the response is:  
 ![settings](/resources/settings_ap.jpg "settings web page response in AP mode")  

@@ -72,49 +72,6 @@ input[type=\"submit\"]:hover {\
 background-color: #2980b9;\
 }\r\n"
 
-#define STYLE_INFO_CSS                        "body {\
-font-family: Arial, sans-serif;\
-background-color: #f4f6f8;\
-color: #333;\
-display: flex;\
-justify-content: center;\
-align-items: flex-start;\
-min-height: 100vh;\
-padding-top: 50px;\
-margin: 0;\
-}\n\
-.info-container {\
-background-color: #ffffff;\
-padding: 30px;\
-border-radius: 8px;\
-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);\
-width: 400px;\
-font-size: 2rem;\
-}\n\
-h2 {\
-color: #2c3e50;\
-margin-bottom: 20px;\
-text-align: center;\
-font-size: 1.5rem;\
-}\n\
-h3 {\
-color:rgb(90, 100, 240);\
-margin-bottom: 20px;\
-text-align: center;\
-}\n\
-.info-data {\
-display: flex;\
-flex-direction: column;\
-gap: 10px;\
-align-items: stretch;\
-}\n\
-.info-data label span.value {\
-font-family: 'Consolas', 'Courier New', monospace;\
-font-size: 2.2rem;\
-color: rgb(0, 0, 255);\
-font-weight: bold;\
-}\r\n"
-
 #define STYLE_FORM_DARK         ":root{--bg: #121212;--fg: #e0e0e0;--border: #444;--accent: #00f;}\
 body{font-family: Arial, sans-serif;background: var(--bg);color: var(--fg);margin: 10px;font-size: 14px;}\
 .container{max-width: 320px;margin: auto;}\
@@ -159,45 +116,7 @@ display:flex;align-items:center;justify-content:center;height:100vh}\
 .led.off{background-color:#555;box-shadow: inset 0 0 5px #222;}\
 .led.on{background-color:#00cc00;box-shadow: 0 0 10px #00ff00;}\r\n"
 
-// **** INFO PAGE ****
-#define INFO_REPLY_HEAD                     "<!DOCTYPE html>\
-<html lang=\"en\">\
-<head>\
-<meta charset=\"UTF-8\">\
-<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\
-<title>Sensor info</title>\
-<link rel=\"stylesheet\" type=\"text/css\" href=\"style_info.css\">\
-<script>\
-setInterval(() => { location.reload(); }, 10000);\
-</script>\
-</head>"
-
-#define INFO_REPLY_BODY                     "<body>\
-<div class=\"info-container\">\
-<h2>%s</h2>\
-<div class=\"info-data\">\
-<label><span class=\"value\">%.02f %s</span></label>\
-<label><span class=\"value\">%.02f %%RH</span></label>\
-</div>\
-<h2 id=\"datetime\"></h2>\
-<script>\
-document.getElementById('datetime').textContent = new Date().toLocaleString();\
-</script>\
-</div>\
-</body>\
-</html>"
-
-#define INFO_REPLY_BODY_NOT_VALID         "<body>\
-<div class=\"info-container\">\
-<h2>%s</h2>\
-<div class=\"info-data\">\
-<p>Sensor not available or last data read is not valid!</p>\
-</div>\
-</div>\
-</body>\
-</html>"
-
-// **** HOME PAGE (replace INFO page)
+// **** HOME PAGE ****
 #define HOME_REPLY_HEAD                    "<!doctype html>\
 <html>\
 <head>\
@@ -212,9 +131,8 @@ document.getElementById('datetime').textContent = new Date().toLocaleString();\
 <div class=r><span class=l>TEMP</span><span class=v>%.02f %s</span></div>\
 <div class=r><span class=l>HUM</span><span class=v>%.02f %%RH</span></div>"
 
-#define HOME_REPLY_BODY_OUTS                "<h2 class=t>Outputs</h2>\
-<div class=r><span class=l>OUT1 (%s)</span><span class=\"%s\"></span></div>\
-<div class=r><span class=l>OUT2 (%s)</span><span class=\"%s\"></span></div>\
+#define HOME_REPLY_BODY_OUTS                "<div class=r><span class=l>OUT 1 (%s)</span><span class=\"%s\"></span></div>\
+<div class=r><span class=l>OUT 2 (%s)</span><span class=\"%s\"></span></div>\
 <div class=d id=datetime>\
 <h3 id=\"datetime\"></h3>\
 <script>\
@@ -451,12 +369,10 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 #define STYLE_URL                           "/style.css"
 #define STYLE_FORM_DARK_URL                 "/style_form_dark.css"
 #define STYLE_FORM_LIGHT_URL                "/style_form_light.css"
-#define STYLE_INFO_URL                      "/style_info.css"
 #define STYLE_HOME_DARK_URL                 "/style_dark.css"
 #define STYLE_HOME_LIGHT_URL                "/style_light.css"
 #define FAVICON_URL                         "/favicon.ico"
 #define HOME_URL                            "/home"
-#define INFO_URL                            "/info"
 #define SETTINGS_URL                        "/settings"
 #define SETTINGS_FORM_URL                   "/setparams"
 #define ADVANCED_URL                        "/advparams"
@@ -484,12 +400,10 @@ enum http_get_req {
     HTTP_REQ_STYLE,
     HTTP_REQ_STYLE_FORM_DARK,
     HTTP_REQ_STYLE_FORM_LIGHT,
-    HTTP_REQ_STYLE_INFO,
     HTTP_REQ_STYLE_DARK,
     HTTP_REQ_STYLE_LIGHT,
     HTTP_REQ_HOME,
     HTTP_REQ_FAVICON,
-    HTTP_REQ_INFO,
     HTTP_REQ_SETTINGS,
     HTTP_REQ_SETTINGS_FORM,
     HTTP_REQ_ADVANCED,
@@ -508,8 +422,6 @@ enum http_get_req {
 };
 
 enum http_post_req {
-//    HTTP_API_INFO,
-//    HTTP_API_GET_SETTINGS,
     HTTP_API_SET_ALL_PARAMS,
     HTTP_API_SET_WIFI_PARAMS,
     HTTP_API_SET_SETTING_PARAMS,
