@@ -71,8 +71,8 @@ enum http_get_req tcp_find_get_request(const char *req)
 
     if (get_path(req, &path, &len) != 0)
         return HTTP_GET_REQ_MAX;
-
-    for (page = 1; page < HTTP_GET_REQ_MAX; page++) {
+    
+    for (page = 0; page < HTTP_GET_REQ_MAX; page++) {
         const char *ref = http_get_req_str[page];
         size_t ref_len = strlen(ref);
 
@@ -957,7 +957,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
                 // FIXME: provare 
                 printf("No Request, redirect to home page\n");
                 // send 302 Redirect
-                con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_REDIRECT, con_state->gw);
+                con_state->header_len = snprintf(con_state->headers, sizeof(con_state->headers), HTTP_RESPONSE_REDIRECT, ipaddr_ntoa(con_state->gw));
                 err = tcp_write(pcb, con_state->headers, con_state->header_len, 0);
                 if (err != ERR_OK) {
                     printf("failed to write unsupported request data %d\n", err);
