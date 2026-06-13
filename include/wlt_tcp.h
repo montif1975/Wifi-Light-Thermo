@@ -359,7 +359,7 @@ document.getElementById(\"datetime\").textContent = new Date().toLocaleString();
 
 #define API_INFO_REPLY                      "{\"T\":%.2f,\"TF\":\"%s\",\"H\":%.2f}"
 
-#define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" HOME_URL "\r\n\r\n"
+#define HTTP_RESPONSE_REDIRECT              "HTTP/1.1 302 Redirect\nLocation: http://%s" HOME_URL "\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_BAD_REQUEST           "HTTP/1.1 400 Bad Request\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_NOT_FOUND             "HTTP/1.1 404 Not Found\nContent-Length: 0\nConnection: close\r\n\r\n"
 #define HTTP_RESPONSE_INTERNAL_ERROR        "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\nConnection: close\r\n\r\n"
